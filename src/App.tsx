@@ -1,5 +1,4 @@
-import React, {useRef, useEffect, useState, useCallback, KeyboardEvent} from 'react';
-import logo from './logo.svg';
+import React, {useRef, useEffect, useState, useCallback, KeyboardEvent} from 'react'
 import './App.css';
 import {
   Matrix4x4_Cross_Matrix4x4,
@@ -20,11 +19,13 @@ import {
   Vector_Mul,
   Vector_Normalise,
   Vector_Sub,
-  Populate_Mesh_With_Cube
+  Populate_Mesh_With_Cube,
+  Triangle_Get_Centroid
 } from "./utils" 
 import {VECTOR_3D, Matrix4x4, VECTOR_UV, Triangle, Mesh} from "./types"
-import { resolve } from 'node:path/win32';
 
+
+const randomString = "We get the normal of each triangle by getting the cross product of the vector"
 
 const colors = [
   "red", "orange", "yellow", "green", "blue", "purple",
@@ -62,6 +63,34 @@ const DrawTriangle = (
   context.fillStyle = color;
   context.fill();
   //context.stroke();
+}
+
+const DrawLine = (
+  x0: number, 
+  y0: number,
+  x1: number, 
+  y1: number,
+  color: string,
+  context: CanvasRenderingContext2D
+) => {
+  context.strokeStyle = "white";
+  context.lineWidth = 1;
+  context.beginPath();
+  context.moveTo(x0, y0);
+  context.lineTo(x1, y1);
+  context.closePath()
+  context.stroke();
+}
+
+
+const DrawPoint = (
+  x0: number,
+  y0: number, 
+  color: string, 
+  context: CanvasRenderingContext2D
+) => {
+  context.fillStyle = "white"
+  context.fillRect(x0, y0, 10, 10);
 }
 
 const App = () => {
@@ -102,7 +131,7 @@ const App = () => {
       return;
     }
 
-    fTheta.current += 1 * delta;
+    fTheta.current += 0.1 * delta;
 
     //Drawing Code
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -121,7 +150,7 @@ const App = () => {
     
     let colorIndex = 0;
     gameState.meshCube.tris.forEach((tri, idx) => {
-      let triTransformed = {
+      let triTransformed: Triangle = {
         p: [
           Matrix4x4_Cross_Vector(worldMatrix, tri.p[0]),
           Matrix4x4_Cross_Vector(worldMatrix, tri.p[1]),
@@ -129,9 +158,20 @@ const App = () => {
         ], 
         uvCoords: tri.uvCoords,
       }
+
+
+      //Cross Product Calculations
+      let triVecOne: VECTOR_3D = Vector_Sub(triTransformed.p[1], triTransformed.p[0]);
+      let triVecTwo: VECTOR_3D = Vector_Sub(triTransformed.p[2], triTransformed.p[1]);
+
+
+      //The normal of the vector is the cross product of the two vectors that make up the triangle
+      //Or find using the determinant of the matrix produced when finding the area
+      let triNormal: VECTOR_3D = Vector_CrossProduct(triVecOne, triVecTwo);
+      let triMiddle: VECTOR_3D = Triangle_Get_Centroid(triTransformed);
       
 
-      let triProjected = {
+      let triProjected: Triangle = {
         p: [
           Matrix4x4_Cross_Vector(projMat, triTransformed.p[0]),
           Matrix4x4_Cross_Vector(projMat, triTransformed.p[1]),
@@ -140,9 +180,22 @@ const App = () => {
         uvCoords: triTransformed.uvCoords,
       }
 
+
+      
+
       triProjected.p[0] = Vector_Div(triProjected.p[0], triProjected.p[0].w);
       triProjected.p[1] = Vector_Div(triProjected.p[1], triProjected.p[1].w);
       triProjected.p[2] = Vector_Div(triProjected.p[2], triProjected.p[2].w);
+
+      triNormal = Matrix4x4_Cross_Vector(projMat, triNormal);
+      triNormal = Vector_Div(triNormal, triNormal.w);
+
+      triMiddle = Matrix4x4_Cross_Vector(projMat, triMiddle);
+      triMiddle = Vector_Div(triMiddle, triMiddle.w);
+
+      console.log(triNormal);
+
+
 
       //Scale into screen view
       triProjected.p[0].x += 1.0; triProjected.p[0].y += 1.0;
@@ -155,12 +208,29 @@ const App = () => {
 			triProjected.p[2].x *= 0.5 * gameState.canvas.width;
 			triProjected.p[2].y *= 0.5 * gameState.canvas.height; 
 
+
+      triNormal.x += 1.0;
+      triNormal.y += 1.0;
+      triNormal.z += 1.0;
+      triNormal.x *= 0.5 * gameState.canvas.width;
+			triNormal.y *= 0.5 * gameState.canvas.height;
+
+      triMiddle.x += 1.0;
+      triMiddle.y += 1.0;
+      triMiddle.z += 1.0;
+      triMiddle.x *= 0.5 * gameState.canvas.width;
+			triMiddle.y *= 0.5 * gameState.canvas.height;
+
       colorIndex += 1;
 
       DrawTriangle(triProjected.p[0].x, triProjected.p[0].y,
 				triProjected.p[1].x, triProjected.p[1].y,
 				triProjected.p[2].x, triProjected.p[2].y,
 				colors[colorIndex % colors.length], context);
+
+      DrawPoint(triMiddle.x, triMiddle.y, "white", context);
+
+      DrawLine(triMiddle.x, triMiddle.y, triNormal.x, triNormal.y, "white", context);
 
       
     })
