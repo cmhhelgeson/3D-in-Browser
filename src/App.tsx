@@ -21,7 +21,8 @@ import {
   Vector_Sub,
   Populate_Mesh_With_Cube,
   Triangle_Get_Centroid,
-  Vector_Initialize
+  Vector_Initialize,
+  Mesh_OBJ_Has_Texture_Coords
 } from "./utils" 
 import {VECTOR_3D, Matrix4x4, VECTOR_UV, Triangle, Mesh} from "./types"
 
@@ -29,8 +30,16 @@ import {VECTOR_3D, Matrix4x4, VECTOR_UV, Triangle, Mesh} from "./types"
 const randomString = "We get the normal of each triangle by getting the cross product of the vector"
 
 const colors = [
-  "red", "orange", "yellow", "green", "blue", "purple",
-  "aquamarine", "cyan", "rebeccapurple"
+  //red, orange, yellow, green, blue, purple, cyan, teal, pink
+  'rgb(255,0,0)',
+  'rgb(255,165,0)',
+  'rgb(255,255,0)',
+  'rgb(0,128,0)',
+  'rgb(0, 0, 255)',
+  'rgb(128,0,128)',
+  'rgb(0,255,255)',
+  'rgb(0,128,128)',
+  'rgb(255,192,203)'
 ]
 
 let start: number;
@@ -95,6 +104,16 @@ const DrawPoint = (
 }
 
 const App = () => {
+
+
+  const test = Mesh_OBJ_Has_Texture_Coords("./models/suzanne.obj")
+  if (test) {
+    console.log("has texture coords")
+  } else {
+    console.log("No texture coords");
+  }
+
+  
 
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -186,6 +205,23 @@ const App = () => {
         light = Vector_Normalise(light);
 
         const lightToNormal: number = Vector_DotProduct(triNormal, light);
+        //get r g b values from string
+        const initialColor = colors[colorIndex].match(/(\d+)/g);
+        let r = 255;
+        let g = 255;
+        let b = 255;
+
+        if (initialColor && initialColor.length >= 3) {
+          console.log(initialColor[0], initialColor[1], initialColor[2])
+          r = parseInt(initialColor[0]);
+          g = parseInt(initialColor[1]);
+          b = parseInt(initialColor[2])
+        }
+        r = lightToNormal * r;
+        g = lightToNormal * g;
+        b = lightToNormal * b;
+        
+        const color = `rgba(${r} ${g} ${b})`;
 
         let triProjected: Triangle = {
           p: [
@@ -214,7 +250,7 @@ const App = () => {
         DrawTriangle(triProjected.p[0].x, triProjected.p[0].y,
 				  triProjected.p[1].x, triProjected.p[1].y,
 				  triProjected.p[2].x, triProjected.p[2].y,
-				  colors[colorIndex % colors.length], context);
+				  color, context);
       }
 
       

@@ -1,7 +1,4 @@
 import { VECTOR_3D, VECTOR_UV, Matrix4x4, Mesh, Triangle, Bitmap} from "./types"
-import fs from "fs"
-import { visitNode } from "typescript";
-
 
 /* MESH UTILS */
 //#region
@@ -9,7 +6,7 @@ import { visitNode } from "typescript";
 //https://github.com/mrdoob/three.js/blob/eadd35e44c49eee5b3910cd2b761fbdfd05d6c67/examples/jsm/loaders/STLLoader.js
 //http://www.jgxsoft.com/examples/STL%20Reader/STL%20Reader.html
 //https://regexr.com/
-export const Mesh_Load_Model_FTL_ASCII = (data: string) => {
+/*export const Mesh_Load_Model_FTL_ASCII = (data: string) => {
 	//REGEXP #1: 
 	//   /g    = global search
 	//   (     = groups tokens together
@@ -108,13 +105,13 @@ export const Mesh_Load_Model_FTL_ASCII = (data: string) => {
 	return;
 
 
-}
+} */
 
 export const Mesh_Load_Model_FTL_BINARY = (location: string) => {
 	return;
 }
 
-export const Mesh_OBJ_Has_Texture_Coords = (location: string) => {
+export const Mesh_OBJ_Has_Texture_Coords = (location: string) : boolean => {
 	//Pattern that selects indice lines of an obj
 	const patternUV = /f([\s\S]+?)\n/g
 
@@ -132,10 +129,11 @@ export const Mesh_OBJ_Has_Texture_Coords = (location: string) => {
 			if (indiceLines !== null) {
 				return indiceLines[0].includes("//");
 			} else {
-				console.error("Improperly formatted obj")
+				return false;
 			}
 		}
 	}
+	return false;
 }
 
 export const Mesh_Load_Model_OBJ = (location: string) => {
@@ -193,10 +191,10 @@ export const Mesh_Load_Model_OBJ = (location: string) => {
                         for (let i = 0; i < 3; i++) {
                         	let v = [];
                             for (let j = 0; j < 3; j++)
-                                v.push(parseInt(tokens[i + 1].split("/")[j]))
-                            f.push(v);
+                                v.push(parseInt(values[i + 1].split("/")[j]))
+                            newIndices.push(v);
                         }
-                        indices.push(f);
+                        indices.push(newIndices);
 					} break;
 					//Load new indices
 				}
