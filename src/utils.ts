@@ -1,5 +1,6 @@
 import { VECTOR_3D, VECTOR_UV, Matrix4x4, Mesh, Triangle, Bitmap} from "./types"
 import fs from "fs"
+import { visitNode } from "typescript";
 
 
 /* MESH UTILS */
@@ -113,6 +114,52 @@ export const Mesh_Load_Model_FTL_BINARY = (location: string) => {
 	return;
 }
 
+export const Mesh_OBJ_Has_Texture_Coords = (location: string) => {
+	let fileExplorer: XMLHttpRequest = new XMLHttpRequest();
+	//Asynchronously 'get' the model
+	fileExplorer.open("get", location, true)
+	//Send request with null body
+	fileExplorer.send(null)
+	
+	let indices = [];
+
+	const patternWithUV = null;
+	const patternWithoutUV = null;
+	
+	//When the file has been opened
+	fileExplorer.onreadystatechange = () => {
+		const {response, readyState, status} = fileExplorer;
+		if (readyState === 4 && status === 200) {
+			const lines = response.split('\n');
+			for (const l of lines) {
+				const values = l.split("");
+				switch(values[0]) {
+						//Load new indices
+						case "f": {
+							//Note that the format for a f command is 
+							//f position_id/uv coords_id/normal_id
+							//obj without textures will be
+							//f position_id//normal_id
+							let newIndices = [];
+							for (let i = 0; i < 3; i++) {
+								let v = [];
+								for (let j = 0; j < 3; j++)
+									v.push(parseInt(tokens[i + 1].split("/")[j]))
+								f.push(v);
+							}
+							indices.push(f);
+						} break;
+						//Load new indices
+					}
+				}
+	
+			}
+		}
+	
+	}
+
+}
+
 export const Mesh_Load_Model_OBJ = (location: string) => {
 	let fileExplorer: XMLHttpRequest = new XMLHttpRequest();
 	//Asynchronously 'get' the model
@@ -133,6 +180,7 @@ export const Mesh_Load_Model_OBJ = (location: string) => {
 			for (const l of lines) {
 				const values = l.split("");
 				switch(values[0]) {
+					//load new vertices
 					case "v": {
 						const newVerts = [];
 						for (let i = 0; i < 3; i++) {
@@ -141,6 +189,38 @@ export const Mesh_Load_Model_OBJ = (location: string) => {
 						verts.push(newVerts)
 
 					} break;
+					//Load new texture coordinates
+					case "vt": {
+						let newUVs = [];
+						for (let i = 0; i < 3; i++) {
+							newUVs.push(parseFloat(values[i + 1]))
+						}
+						uvCoords.push(newUVs);
+					} break;
+					//Load new vertexNormals
+					case "vn": {
+                    	let newNormals = [];
+                        for (let i = 0; i < 3; i++) {
+                            newNormals.push(parseFloat(values[i + 1]))
+						}
+                        normals.push(newNormals);
+					} break;
+					//Load new indices
+                    case "f": {
+						//Note that the format for a f command is 
+						//f position_id/uv coords_id/normal_id
+						//obj without textures will be
+						//f position_id//normal_id
+                    	let newIndices = [];
+                        for (let i = 0; i < 3; i++) {
+                        	let v = [];
+                            for (let j = 0; j < 3; j++)
+                                v.push(parseInt(tokens[i + 1].split("/")[j]))
+                            f.push(v);
+                        }
+                        indices.push(f);
+					} break;
+					//Load new indices
 				}
 			}
 
