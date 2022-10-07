@@ -20,7 +20,8 @@ import {
   Vector_Normalise,
   Vector_Sub,
   Populate_Mesh_With_Cube,
-  Triangle_Get_Centroid
+  Triangle_Get_Centroid,
+  Vector_Initialize
 } from "./utils" 
 import {VECTOR_3D, Matrix4x4, VECTOR_UV, Triangle, Mesh} from "./types"
 
@@ -29,7 +30,7 @@ const randomString = "We get the normal of each triangle by getting the cross pr
 
 const colors = [
   "red", "orange", "yellow", "green", "blue", "purple",
-  "aquamarine"
+  "aquamarine", "cyan", "rebeccapurple"
 ]
 
 let start: number;
@@ -171,66 +172,50 @@ const App = () => {
       let triMiddle: VECTOR_3D = Triangle_Get_Centroid(triTransformed);
       
 
-      let triProjected: Triangle = {
-        p: [
-          Matrix4x4_Cross_Vector(projMat, triTransformed.p[0]),
-          Matrix4x4_Cross_Vector(projMat, triTransformed.p[1]),
-          Matrix4x4_Cross_Vector(projMat, triTransformed.p[2]),
-        ], 
-        uvCoords: triTransformed.uvCoords,
+      triNormal = Vector_Normalise(triNormal);
+      colorIndex = (colorIndex + 1) % colors.length;
+
+      //Take the dot product of the triangleNormal and the camera eye vector
+      //If the normal is perpendicular to or forms an obtuse angle with the
+      //Camera eye vector, then the projection of the normal will be <=0
+      if (Vector_DotProduct(triNormal, triTransformed.p[0]) < 0.0) {
+
+        //Create Single Direction Light
+
+        let light: VECTOR_3D = Vector_Initialize(0.0, 0.0, -1.0);
+        light = Vector_Normalise(light);
+
+        const lightToNormal: number = Vector_DotProduct(triNormal, light);
+
+        let triProjected: Triangle = {
+          p: [
+            Matrix4x4_Cross_Vector(projMat, triTransformed.p[0]),
+            Matrix4x4_Cross_Vector(projMat, triTransformed.p[1]),
+            Matrix4x4_Cross_Vector(projMat, triTransformed.p[2]),
+          ], 
+          uvCoords: triTransformed.uvCoords,
+        }
+
+        triProjected.p[0] = Vector_Div(triProjected.p[0], triProjected.p[0].w);
+        triProjected.p[1] = Vector_Div(triProjected.p[1], triProjected.p[1].w);
+        triProjected.p[2] = Vector_Div(triProjected.p[2], triProjected.p[2].w);
+
+        //Scale into screen view
+        triProjected.p[0].x += 1.0; triProjected.p[0].y += 1.0;
+			  triProjected.p[1].x += 1.0; triProjected.p[1].y += 1.0;
+			  triProjected.p[2].x += 1.0; triProjected.p[2].y += 1.0;
+			  triProjected.p[0].x *= 0.5 * gameState.canvas.width;
+			  triProjected.p[0].y *= 0.5 * gameState.canvas.height;
+			  triProjected.p[1].x *= 0.5 * gameState.canvas.width
+			  triProjected.p[1].y *= 0.5 * gameState.canvas.height;
+			  triProjected.p[2].x *= 0.5 * gameState.canvas.width;
+			  triProjected.p[2].y *= 0.5 * gameState.canvas.height; 
+
+        DrawTriangle(triProjected.p[0].x, triProjected.p[0].y,
+				  triProjected.p[1].x, triProjected.p[1].y,
+				  triProjected.p[2].x, triProjected.p[2].y,
+				  colors[colorIndex % colors.length], context);
       }
-
-
-      
-
-      triProjected.p[0] = Vector_Div(triProjected.p[0], triProjected.p[0].w);
-      triProjected.p[1] = Vector_Div(triProjected.p[1], triProjected.p[1].w);
-      triProjected.p[2] = Vector_Div(triProjected.p[2], triProjected.p[2].w);
-
-      triNormal = Matrix4x4_Cross_Vector(projMat, triNormal);
-      triNormal = Vector_Div(triNormal, triNormal.w);
-
-      triMiddle = Matrix4x4_Cross_Vector(projMat, triMiddle);
-      triMiddle = Vector_Div(triMiddle, triMiddle.w);
-
-      console.log(triNormal);
-
-
-
-      //Scale into screen view
-      triProjected.p[0].x += 1.0; triProjected.p[0].y += 1.0;
-			triProjected.p[1].x += 1.0; triProjected.p[1].y += 1.0;
-			triProjected.p[2].x += 1.0; triProjected.p[2].y += 1.0;
-			triProjected.p[0].x *= 0.5 * gameState.canvas.width;
-			triProjected.p[0].y *= 0.5 * gameState.canvas.height;
-			triProjected.p[1].x *= 0.5 * gameState.canvas.width
-			triProjected.p[1].y *= 0.5 * gameState.canvas.height;
-			triProjected.p[2].x *= 0.5 * gameState.canvas.width;
-			triProjected.p[2].y *= 0.5 * gameState.canvas.height; 
-
-
-      triNormal.x += 1.0;
-      triNormal.y += 1.0;
-      triNormal.z += 1.0;
-      triNormal.x *= 0.5 * gameState.canvas.width;
-			triNormal.y *= 0.5 * gameState.canvas.height;
-
-      triMiddle.x += 1.0;
-      triMiddle.y += 1.0;
-      triMiddle.z += 1.0;
-      triMiddle.x *= 0.5 * gameState.canvas.width;
-			triMiddle.y *= 0.5 * gameState.canvas.height;
-
-      colorIndex += 1;
-
-      DrawTriangle(triProjected.p[0].x, triProjected.p[0].y,
-				triProjected.p[1].x, triProjected.p[1].y,
-				triProjected.p[2].x, triProjected.p[2].y,
-				colors[colorIndex % colors.length], context);
-
-      DrawPoint(triMiddle.x, triMiddle.y, "white", context);
-
-      DrawLine(triMiddle.x, triMiddle.y, triNormal.x, triNormal.y, "white", context);
 
       
     })

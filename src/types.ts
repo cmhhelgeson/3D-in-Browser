@@ -37,3 +37,9 @@ export const Identity: Matrix4x4 = [
     [0, 0, 1, 0], 
     [0, 0, 0, 1], 
 ]
+
+export type Bitmap = {
+    width: number,
+    height: number,
+    pixels: Uint32Array
+}

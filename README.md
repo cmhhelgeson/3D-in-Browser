@@ -2,3 +2,5 @@ WIP 3D Demonstrations in Browser showing competency in Linear Algebra, Vector Ma
 
 (10/1/2022) : Basic Vertex and Triangle Rendering
 (10/5/2022) : Triangle Culling and Finding Normals of Triangles (currently inside-out)
+
+(10/6/2022): Fixing culling. TODO: Store normal of triangle into mesh info

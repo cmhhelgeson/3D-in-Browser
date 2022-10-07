@@ -1,9 +1,154 @@
-import { VECTOR_3D, VECTOR_UV, Matrix4x4, Mesh, Triangle} from "./types"
+import { VECTOR_3D, VECTOR_UV, Matrix4x4, Mesh, Triangle, Bitmap} from "./types"
 import fs from "fs"
 
 
 /* MESH UTILS */
 //#region
+
+//https://github.com/mrdoob/three.js/blob/eadd35e44c49eee5b3910cd2b761fbdfd05d6c67/examples/jsm/loaders/STLLoader.js
+//http://www.jgxsoft.com/examples/STL%20Reader/STL%20Reader.html
+//https://regexr.com/
+export const Mesh_Load_Model_FTL_ASCII = (data: string) => {
+	//REGEXP #1: 
+	//   /g    = global search
+	//   (     = groups tokens together
+	//   [     = start defining character set
+	//   \s    = match any character that is whitespace
+	//   \S    = match any character that is not whitespace
+	//   quantifiers:
+	//       + = match 1 or more of character (ie. index 1 but not 0)
+	//       * = match 0 or more of character (ie. index 0 - infinity)
+	//  {1, 3} = match 1 to 3 of character    (i.e 1st through 3rd instances of match set)
+	//  {3, }  = match 3 or more of character 
+	//       ? = lazy, will match as few as possible
+	//  Essentially find any pattern with solid, random chars, then endsolid
+	const patternSolid = /solid([\s\S]*?)endsolid/g
+	//Same method as previous variable
+	const patternFace = /facet([\s\S]*?)endfacet/g;
+	//Will match the 1.0733423E2 format of floats
+	const patternFloat = /[\s]+([+-]?(?:\d*)(?:\.\d*)?(?:[eE][+-]?\d+)?)/.source;
+	const patternVertex = new RegExp( 'vertex' + patternFloat + patternFloat + patternFloat, 'g' );
+	const patternNormal = new RegExp( 'normal' + patternFloat + patternFloat + patternFloat, 'g' );
+
+	const vertices = [];
+	const normals = [];
+
+	const normal = Vector_Initialize(0.0, 0.0, 0.0);
+
+	let result = null;
+
+	let groupCount = 0;
+	let startVertex = 0;
+	let endVertex = 0;
+	let faceCounter = 0;
+
+	//If the ascii file begins with solid and ends with endsolid
+	while ( ( result = patternSolid.exec( data ) ) !== null ) {
+
+		startVertex = endVertex;
+
+		const solid = result[ 0 ];
+
+		while ( ( result = patternFace.exec( solid ) ) !== null ) {
+
+			let vertexCountPerFace = 0;
+			let normalCountPerFace = 0;
+
+			const text = result[ 0 ];
+
+			while ( ( result = patternNormal.exec( text ) ) !== null ) {
+
+				normal.x = parseFloat( result[ 1 ] );
+				normal.y = parseFloat( result[ 2 ] );
+				normal.z = parseFloat( result[ 3 ] );
+				normalCountPerFace ++;
+
+			}
+
+			while ( ( result = patternVertex.exec( text ) ) !== null ) {
+
+				vertices.push( parseFloat( result[ 1 ] ), parseFloat( result[ 2 ] ), parseFloat( result[ 3 ] ) );
+				normals.push( normal.x, normal.y, normal.z );
+				vertexCountPerFace ++;
+				endVertex ++;
+
+			}
+
+			// every face have to own ONE valid normal
+
+			if ( normalCountPerFace !== 1 ) {
+
+				console.error( 'THREE.STLLoader: Something isn\'t right with the normal of face number ' + faceCounter );
+
+			}
+
+			// each face have to own THREE valid vertices
+
+			if ( vertexCountPerFace !== 3 ) {
+
+				console.error( 'THREE.STLLoader: Something isn\'t right with the vertices of face number ' + faceCounter );
+
+			}
+
+			faceCounter ++;
+
+		}
+
+		const start = startVertex;
+		const count = endVertex - startVertex;
+
+
+		//TODO: Make it work with current setup
+		//geometry.addGroup( start, count, groupCount );
+		groupCount ++;
+
+	}
+
+	return;
+
+
+}
+
+export const Mesh_Load_Model_FTL_BINARY = (location: string) => {
+	return;
+}
+
+export const Mesh_Load_Model_OBJ = (location: string) => {
+	let fileExplorer: XMLHttpRequest = new XMLHttpRequest();
+	//Asynchronously 'get' the model
+	fileExplorer.open("get", location, true)
+	//Send request with null body
+	fileExplorer.send(null)
+
+	let verts = [];
+	let uvCoords = [];
+	let normals = [];
+	let indices = [];
+
+	//When the file has been opened
+	fileExplorer.onreadystatechange = () => {
+		const {response, readyState, status} = fileExplorer;
+		if (readyState === 4 && status === 200) {
+			const lines = response.split('\n');
+			for (const l of lines) {
+				const values = l.split("");
+				switch(values[0]) {
+					case "v": {
+						const newVerts = [];
+						for (let i = 0; i < 3; i++) {
+							newVerts.push(parseFloat(values[i + 1]));
+						}
+						verts.push(newVerts)
+
+					} break;
+				}
+			}
+
+		}
+	}
+
+}
+
 export const Populate_Mesh_With_Cube = (
 	originX: number,
 	originY: number, 
@@ -102,6 +247,8 @@ export const Populate_Mesh_With_Cube = (
 
 }
 
+
+
 /* export const LoadModelFromObj = (fileName: string): Mesh => {
 	let newMesh: Mesh = {
 		tris: []
@@ -160,6 +307,8 @@ export const Populate_Mesh_With_Cube = (
 
 //#endregion
 
+/* MATRIX4X4 UTILS */
+//#region
 export const Matrix4x4_Cross_Vector = (
     m: Matrix4x4, 
     i: VECTOR_3D
@@ -289,7 +438,15 @@ export const Matrix4x4_Cross_Matrix4x4 = (
 	return matrix;
 }
 
+//#endregion
+
 /* VECTOR UTILS */
+//#region
+
+export const Vector_Initialize = (x: number, y: number, z: number) => {
+	return {x: x, y: y, z: z, w: 1.0}
+}
+
 export const Vector_Add = (v1: VECTOR_3D, v2: VECTOR_3D): VECTOR_3D => {
     return { x: v1.x + v2.x, y: v1.y + v2.y, z: v1.z + v2.z, w: 1.0};
 }
@@ -327,6 +484,8 @@ export const Vector_CrossProduct = (v1: VECTOR_3D, v2: VECTOR_3D): VECTOR_3D => 
 	return v;
 }
 
+//#endregion
+
 export const Matrix4x4_PointAt = (
     pos: VECTOR_3D, 
     target: VECTOR_3D, 
@@ -361,4 +520,17 @@ export const Triangle_Get_Centroid = (tri: Triangle): VECTOR_3D => {
 		w: 1.0,
 	}
 	return centroidVector;
+}
+
+
+/*BITMAP UTILS */
+//#region
+
+export const Bitmap_Initialize = (width: number, height: number): Bitmap => {
+	return {
+		width: width,
+		height: height,
+		pixels: new Uint32Array(width * height)
+	} as Bitmap
+
 }
