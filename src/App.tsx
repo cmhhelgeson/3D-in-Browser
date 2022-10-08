@@ -29,6 +29,7 @@ import {
 import {VECTOR_3D, Matrix4x4, VECTOR_UV, Triangle, Mesh, SimpleMesh} from "./types"
 import { createReadStream } from 'fs';
 import { create } from 'domain';
+import {models} from "./resources"
 
 
 const randomString = "We get the normal of each triangle by getting the cross product of the vector"
@@ -122,12 +123,10 @@ type GameState = {
 }
 
 
-const cube = SimpleMesh_Load_Model_OBJ("./models/cube.obj")
-
 const App = () => {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const meshCube = useRef<SimpleMesh>(cube);
+  const meshCube = useRef<SimpleMesh>(Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 1.0, 1.0, 1.0));
   const canvasProps = useRef({
     width: 512,
     height: 480,
@@ -142,6 +141,32 @@ const App = () => {
 
   const getCanvasWithContext = (canvas = canvasRef.current) => {
     return {canvas, context: canvas?.getContext("2d")};
+  }
+
+  const drawMesh = (mesh: Mesh) => {
+    const {canvas, context} = getCanvasWithContext();
+
+    for (let i = 0; i < mesh.faceVerts.length; i++) {
+      const vIdx1 = mesh.faceVerts[i][0];
+      const vIdx2 = mesh.faceVerts[i][1];
+      const vIdx3 = mesh.faceVerts[i][2];
+
+      const uvIdx1 = mesh.faceUVs[i][0];
+      const uvIdx2 = mesh.faceUVs[i][1];
+      const uvIdx3 = mesh.faceUVs[i][2];
+
+      let tri: Triangle = {
+        p: [mesh.verts[vIdx1], mesh.verts[vIdx2], mesh.verts[vIdx3]],
+        uvCoords: [mesh.vertexUVs[uvIdx1], mesh.vertexUVs[uvIdx2], mesh.vertexUVs[uvIdx3]]
+      }
+
+
+
+    }
+
+
+
+
   }
 
   const draw = () => {
@@ -159,7 +184,7 @@ const App = () => {
       return;
     }
 
-    fTheta.current += 0.1 * delta;
+    fTheta.current += 0.5 * delta;
 
     //Drawing Code
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -301,6 +326,8 @@ const App = () => {
   //@componentDidMount()
   useEffect(() => {
     document.addEventListener("keydown", handleKeyPress)
+    console.log(models["cube"]);
+    meshCube.current = models["cube"];
   }, [])
 
   useEffect(() => {
