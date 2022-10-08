@@ -1,9 +1,8 @@
-import { VECTOR_3D, VECTOR_UV, Matrix4x4, Mesh, Triangle, Bitmap, NewMesh, SimpleMesh} from "./types"
+import { VECTOR_3D, VECTOR_UV, Matrix4x4, Mesh, Triangle, Bitmap, SimpleMesh} from "./types"
 
 /* VECTOR UTILS */
 //#region
 
-type VectorType = "VECTOR_3D" | "VECTOR_UV"
 
 export const Vector_Initialize = (x: number, y: number, z: number): VECTOR_3D=> {
 	return {x: x, y: y, z: z, w: 1.0}
@@ -203,7 +202,7 @@ const parseOBJResponse = (
 	faceVerts: number[][],
 	faceUVs: number[][],
 	faceNormals: number[][]
-) => {
+) : void => {
 	const lines = response.split('\n');
 	for (const l of lines) {
 		const values = l.split(" ");
@@ -251,9 +250,9 @@ const parseOBJResponse = (
 				faceUVs.push(uv);
 				faceNormals.push(normals);
 			} break;
-
 		}
 	}	
+	console.log("Succesfully parsed obj")
 }
 
 
@@ -264,7 +263,67 @@ const validateUVIndex = (index: any) => {
 	return isNaN(index) || index === undefined || index === null
 }
 
-export const Mesh_Load_Model_OBJ = (location: string, type: MeshLoadType = "MESH") : Mesh | SimpleMesh => {
+export const SimpleMesh_Load_Model_OBJ = (location: string) : SimpleMesh => {
+	let fileExplorer: XMLHttpRequest = new XMLHttpRequest();
+	//Asynchronously 'get' the model
+	fileExplorer.open("get", location, true)
+	//Send request with null body
+	fileExplorer.send(null);
+
+
+	let _verts: VECTOR_3D[] = [];
+	let _vertUVs: VECTOR_UV[] = [];
+	let _vertNormals: VECTOR_3D[] = [];
+	let _faceVerts: number[][] = [];
+	let _faceUVs: number[][] = [];
+	let _faceNormals: number[][] = [];
+
+	//When the file has been opened
+	fileExplorer.onreadystatechange = () => {
+		const {response, readyState, status} = fileExplorer;
+		if (readyState === 4 && status === 200) {
+			parseOBJResponse(response, _verts, _vertUVs, _vertNormals, _faceVerts, _faceUVs, _faceNormals)
+		}
+	}
+
+
+	let mesh: SimpleMesh = {
+		tris: []
+	}
+		//For each triangle face
+	for (let i = 0; i < _faceVerts.length; i++) {
+		const vi1 = _faceVerts[i][0];
+		const vi2 = _faceVerts[i][1];
+		const vi3 = _faceVerts[i][2];
+
+		let uvi1 = 0;
+		let uvi2 = 0;
+		let uvi3 = 0;
+		//TODO: Currently, if no uvs are present, these values will be NaN, but perhaps we don't want to store
+		//large arrays of NaN values
+		uvi1 = _faceUVs[i][0];
+		uvi2 = _faceUVs[i][1];
+		uvi3 = _faceUVs[i][2];
+		if (validateUVIndex(uvi1)) {
+			const tri: Triangle = {
+				p: [_verts[vi1], _verts[vi2], _verts[vi3]],
+				uvCoords: [_vertUVs[uvi1], _vertUVs[uvi2], _vertUVs[uvi3]]
+			}
+			mesh.tris.push(tri);
+		} else {
+			const dummy: VECTOR_UV = Vector_UV_Initialize(0.0, 0.0, 0.0)
+			const tri: Triangle= {
+				p: [_verts[vi1], _verts[vi2], _verts[vi3]],
+				uvCoords: [dummy, dummy, dummy]
+			}
+			mesh.tris.push(tri);
+		}
+	}
+	console.log(`Successfully loaded mesh from ${location}`);
+	return mesh;
+}
+
+export const Mesh_Load_Model_OBJ = (location: string) : Mesh => {
 	let fileExplorer: XMLHttpRequest = new XMLHttpRequest();
 	//Asynchronously 'get' the model
 	fileExplorer.open("get", location, true)
@@ -287,41 +346,6 @@ export const Mesh_Load_Model_OBJ = (location: string, type: MeshLoadType = "MESH
 		}
 	}
 
-	if (type === "SIMPLE_MESH") {
-		let mesh: SimpleMesh = {
-			tris: []
-		}
-		//For each triangle face
-		for (let i = 0; i < _faceVerts.length; i++) {
-			const vi1 = _faceVerts[i][0];
-			const vi2 = _faceVerts[i][1];
-			const vi3 = _faceVerts[i][2];
-
-			let uvi1 = 0;
-			let uvi2 = 0;
-			let uvi3 = 0;
-			//TODO: Currently, if no uvs are present, these values will be NaN, but perhaps we don't want to store
-			//large arrays of NaN values
-			uvi1 = _faceUVs[i][0];
-			uvi2 = _faceUVs[i][1];
-			uvi3 = _faceUVs[i][2];
-			if (validateUVIndex(uvi1)) {
-				const tri: Triangle = {
-					p: [_verts[vi1], _verts[vi2], _verts[vi3]],
-					uvCoords: [_vertUVs[uvi1], _vertUVs[uvi2], _vertUVs[uvi3]]
-				}
-				mesh.tris.push(tri);
-			} else {
-				const dummy: VECTOR_UV = Vector_UV_Initialize(0.0, 0.0, 0.0)
-				const tri: Triangle= {
-					p: [_verts[vi1], _verts[vi2], _verts[vi3]],
-					uvCoords: [dummy, dummy, dummy]
-				}
-				mesh.tris.push(tri);
-			}
-		}
-		return mesh;
-	}
 	let mesh: Mesh = {
 		verts: _verts,
 		vertexUVs: _vertUVs,
@@ -330,6 +354,9 @@ export const Mesh_Load_Model_OBJ = (location: string, type: MeshLoadType = "MESH
 		faceUVs: _faceUVs,
 		faceNormals: _faceNormals
 	}
+
+	console.log(`Successfully loaded mesh from ${location}`);
+	console.log(mesh);
 
 	return mesh;
 
@@ -389,7 +416,7 @@ export const Populate_Mesh_With_Cube = (
 	lengthX: number, 
 	lengthY: number,
 	lengthZ: number,
-): Mesh => {
+): SimpleMesh => {
 	const front: VECTOR_3D[] = [
 		//0, 0, 0
 		{x: originX, y: originY, z: originZ, w: 1.0}, 
@@ -419,7 +446,7 @@ export const Populate_Mesh_With_Cube = (
 		{u: 1.0, v: 1.0, w: 1.0}
 	];
 
-	let newMesh: Mesh = {
+	let newMesh: SimpleMesh = {
 		tris: []
 	}
 	newMesh.tris.push({

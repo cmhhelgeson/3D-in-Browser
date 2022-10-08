@@ -22,9 +22,11 @@ import {
   Populate_Mesh_With_Cube,
   Triangle_Get_Centroid,
   Vector_Initialize,
-  Mesh_OBJ_Has_Texture_Coords
+  Mesh_OBJ_Has_Texture_Coords,
+  Mesh_Load_Model_OBJ,
+  SimpleMesh_Load_Model_OBJ
 } from "./utils" 
-import {VECTOR_3D, Matrix4x4, VECTOR_UV, Triangle, Mesh} from "./types"
+import {VECTOR_3D, Matrix4x4, VECTOR_UV, Triangle, Mesh, SimpleMesh} from "./types"
 
 
 const randomString = "We get the normal of each triangle by getting the cross product of the vector"
@@ -49,7 +51,7 @@ let lastRun: number;
 let fps: number;
 
 const regExp = new RegExp('^[0-9a-zA-Z]+(,[0-9a-zA-Z]+)*$');
-const projMat = Matrix4x4_MakeProjection(90, 480 / 512, 0.1, 1000);
+
 
 
 
@@ -103,6 +105,22 @@ const DrawPoint = (
   context.fillRect(x0, y0, 10, 10);
 }
 
+
+type GameState = {
+  meshCube: SimpleMesh,
+  canvas: {
+    width: number,
+    height: number
+    pixelWidth: number,
+    pixelHeight: number,
+    ratio:  number,
+  }, 
+  fov: number,
+  projMat: Matrix4x4
+}
+
+
+const cube = SimpleMesh_Load_Model_OBJ("./models/cube.obj")
 const App = () => {
 
 
@@ -119,7 +137,19 @@ const App = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [demo, setDemo] = useState<number>(1);
   const [frameTime, setFrameTime] = useState<number>(0);
-  const [gameState, setGameState] = useState({
+  const [meshCube, setMeshCube] = useState<SimpleMesh>(
+    Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)
+  )
+  const [canvas, setCanvas] = useState({
+    width: 512,
+    height: 480,
+    pixelWidth: 1,
+    pixelHeight: 1,
+    ratio: 480/512
+  })
+  const [fov, setFov] = useState<number>(90);
+  const [projMat, setProjMat] = useState<Matrix4x4>(Matrix4x4_MakeProjection(90, 490/512, 0.1, 1000))
+  const [gameState, setGameState] = useState<GameState>({
     meshCube: Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 1.0, 1.0, 1.0),
     canvas: {
       width: 512,
@@ -129,6 +159,7 @@ const App = () => {
       ratio: 480/512
     },
     fov: 90,
+    projMat: Matrix4x4_MakeProjection(90, 490/512, 0.1, 1000)
   })
   const fTheta = useRef(0);
 
@@ -211,7 +242,6 @@ const App = () => {
         let b = 255;
 
         if (initialColor && initialColor.length >= 3) {
-          console.log(initialColor[0], initialColor[1], initialColor[2])
           r = parseInt(initialColor[0]);
           g = parseInt(initialColor[1]);
           b = parseInt(initialColor[2])
@@ -224,9 +254,9 @@ const App = () => {
 
         let triProjected: Triangle = {
           p: [
-            Matrix4x4_Cross_Vector(projMat, triTransformed.p[0]),
-            Matrix4x4_Cross_Vector(projMat, triTransformed.p[1]),
-            Matrix4x4_Cross_Vector(projMat, triTransformed.p[2]),
+            Matrix4x4_Cross_Vector(gameState.projMat, triTransformed.p[0]),
+            Matrix4x4_Cross_Vector(gameState.projMat, triTransformed.p[1]),
+            Matrix4x4_Cross_Vector(gameState.projMat, triTransformed.p[2]),
           ], 
           uvCoords: triTransformed.uvCoords,
         }
@@ -262,20 +292,35 @@ const App = () => {
     const {key} = event;
     switch (key) {
       case "w":
-      case "ArrowUp":
-        console.log("pressed up")
+      case "ArrowUp": 
+        console.log("pressed up");
         break;
       case "s":
       case "ArrowDown":
         console.log("Pressed Down");
+        console.log(gameState.projMat);
         break;
       case "e": 
       case "ArrowRight": 
         console.log("Pressed Right")
+        console.log(gameState.fov)
+        const rightFov = gameState.fov + 10;
+        setGameState({
+          ...gameState, 
+          fov: rightFov, 
+          projMat: Matrix4x4_MakeProjection(rightFov, gameState.canvas.ratio, 0.1, 1000)
+        });
         break;
       case "a":
       case "ArrowLeft": 
         console.log("Pressed Left");
+        const newFov = gameState.fov - 10;
+        console.log(newFov)
+        setGameState({
+          ...gameState, 
+          fov: newFov, 
+          projMat: Matrix4x4_MakeProjection(newFov, gameState.canvas.ratio, 0.1, 1000)
+        });
         break;
       default:
         console.log("default case");
@@ -284,13 +329,18 @@ const App = () => {
   }, []);
 
   //@componentDidMount()
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyPress)
+  }, [])
 
   useEffect(() => {
     then = Date.now();
     start = then;
     elapsed = 0;
     requestAnimationFrame(() => draw());
-  }, [handleKeyPress]);
+  }, [handleKeyPress, draw]);
+  
+
 
   return (
     <div className="App">
