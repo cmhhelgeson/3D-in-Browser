@@ -261,7 +261,7 @@ type MeshLoadType = "SIMPLE_MESH" | "MESH"
 
 
 const validateUVIndex = (index: any) => {
-	return index === NaN || index === undefined || index === null
+	return isNaN(index) || index === undefined || index === null
 }
 
 export const Mesh_Load_Model_OBJ = (location: string, type: MeshLoadType = "MESH") : Mesh | SimpleMesh => {
@@ -272,18 +272,18 @@ export const Mesh_Load_Model_OBJ = (location: string, type: MeshLoadType = "MESH
 	fileExplorer.send(null);
 
 
-	let verts: VECTOR_3D[] = [];
-	let vertUVs: VECTOR_UV[] = [];
-	let vertNormals: VECTOR_3D[] = [];
-	let faceVerts: number[][] = [];
-	let faceUVs: number[][] = [];
-	let faceNormals: number[][] = [];
+	let _verts: VECTOR_3D[] = [];
+	let _vertUVs: VECTOR_UV[] = [];
+	let _vertNormals: VECTOR_3D[] = [];
+	let _faceVerts: number[][] = [];
+	let _faceUVs: number[][] = [];
+	let _faceNormals: number[][] = [];
 
 	//When the file has been opened
 	fileExplorer.onreadystatechange = (event) => {
 		const {response, readyState, status} = fileExplorer;
 		if (readyState === 4 && status === 200) {
-			parseOBJResponse(response, verts, vertUVs, vertNormals, faceVerts, faceUVs, faceNormals)
+			parseOBJResponse(response, _verts, _vertUVs, _vertNormals, _faceVerts, _faceUVs, _faceNormals)
 		}
 	}
 
@@ -292,33 +292,46 @@ export const Mesh_Load_Model_OBJ = (location: string, type: MeshLoadType = "MESH
 			tris: []
 		}
 		//For each triangle face
-		for (let i = 0; i < faceVerts.length; i++) {
-			const vi1 = faceVerts[i][0];
-			const vi2 = faceVerts[i][1];
-			const vi3 = faceVerts[i][2];
+		for (let i = 0; i < _faceVerts.length; i++) {
+			const vi1 = _faceVerts[i][0];
+			const vi2 = _faceVerts[i][1];
+			const vi3 = _faceVerts[i][2];
 
 			let uvi1 = 0;
 			let uvi2 = 0;
 			let uvi3 = 0;
 			//TODO: Currently, if no uvs are present, these values will be NaN, but perhaps we don't want to store
 			//large arrays of NaN values
-			uvi1 = faceUVs[i][0];
-			uvi2 = faceUVs[i][1];
-			uvi3 = faceUVs[i][2];
+			uvi1 = _faceUVs[i][0];
+			uvi2 = _faceUVs[i][1];
+			uvi3 = _faceUVs[i][2];
 			if (validateUVIndex(uvi1)) {
-				
+				const tri: Triangle = {
+					p: [_verts[vi1], _verts[vi2], _verts[vi3]],
+					uvCoords: [_vertUVs[uvi1], _vertUVs[uvi2], _vertUVs[uvi3]]
+				}
+				mesh.tris.push(tri);
+			} else {
+				const dummy: VECTOR_UV = Vector_UV_Initialize(0.0, 0.0, 0.0)
+				const tri: Triangle= {
+					p: [_verts[vi1], _verts[vi2], _verts[vi3]],
+					uvCoords: [dummy, dummy, dummy]
+				}
+				mesh.tris.push(tri);
 			}
-			const tri = {
-				p: [verts[vi1], verts[vi2], verts[vi3]],
-				uvCoords: [
-					uvi1 === NaN vertUVs[uvi1], vertUVs[uvi2], vertUVs[uvi3]]
-			}
-			mesh.tris.push[{}]
-
-
-
 		}
+		return mesh;
 	}
+	let mesh: Mesh = {
+		verts: _verts,
+		vertexUVs: _vertUVs,
+		vertexNormals: _vertNormals,
+		faceVerts: _faceVerts,
+		faceUVs: _faceUVs,
+		faceNormals: _faceNormals
+	}
+
+	return mesh;
 
 }
 

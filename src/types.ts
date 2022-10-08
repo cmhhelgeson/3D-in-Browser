@@ -27,9 +27,9 @@ export type Mesh = {
     verts: VECTOR_3D[],
     vertexNormals: VECTOR_3D[],
     vertexUVs: VECTOR_UV[],
-    faceVerts: number[],
-    faceUVs: number[],
-    faceNormals: number[]   
+    faceVerts: number[][],
+    faceUVs: number[][],
+    faceNormals: number[][]   
 }
 
 export type Matrix4x4 = [
