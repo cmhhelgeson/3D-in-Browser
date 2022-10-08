@@ -27,6 +27,8 @@ import {
   SimpleMesh_Load_Model_OBJ
 } from "./utils" 
 import {VECTOR_3D, Matrix4x4, VECTOR_UV, Triangle, Mesh, SimpleMesh} from "./types"
+import { createReadStream } from 'fs';
+import { create } from 'domain';
 
 
 const randomString = "We get the normal of each triangle by getting the cross product of the vector"
@@ -121,21 +123,11 @@ type GameState = {
 
 
 const cube = SimpleMesh_Load_Model_OBJ("./models/cube.obj")
+
 const App = () => {
 
-
-  const test = Mesh_OBJ_Has_Texture_Coords("./models/suzanne.obj")
-  if (test) {
-    console.log("has texture coords")
-  } else {
-    console.log("No texture coords");
-  }
-
-  
-
-
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const meshCube = useRef<SimpleMesh>(Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 1.0, 1.0, 1.0))
+  const meshCube = useRef<SimpleMesh>(cube);
   const canvasProps = useRef({
     width: 512,
     height: 480,

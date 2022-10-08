@@ -1,4 +1,7 @@
 import { VECTOR_3D, VECTOR_UV, Matrix4x4, Mesh, Triangle, Bitmap, SimpleMesh} from "./types"
+import { createReadStream, fstat, ReadStream,} from "fs"
+import {ReadLine, createInterface} from "node:readline"
+import { create } from "domain"
 
 /* VECTOR UTILS */
 //#region
@@ -180,9 +183,9 @@ export const Mesh_OBJ_Has_Texture_Coords = (location: string) : boolean => {
 
 	//When the file has been opened
 	fileExplorer.onreadystatechange = () => {
-		const {response, readyState, status} = fileExplorer;
+		const {responseText, readyState, status} = fileExplorer;
 		if (readyState === 4 && status === 200) {
-			const indiceLines = patternUV.exec(response);
+			const indiceLines = patternUV.exec(responseText);
 			if (indiceLines !== null) {
 				return indiceLines[0].includes("//");
 			} else {
@@ -203,6 +206,8 @@ const parseOBJResponse = (
 	faceUVs: number[][],
 	faceNormals: number[][]
 ) : void => {
+	console.log("Response: ");
+	console.log(response.data)
 	const lines = response.split('\n');
 	for (const l of lines) {
 		const values = l.split(" ");
@@ -263,13 +268,110 @@ const validateUVIndex = (index: any) => {
 	return isNaN(index) || index === undefined || index === null
 }
 
+
+
+
+/* export const SimpleMesh_Load_Model_OBJ = async (stream: ReadStream) : Promise<SimpleMesh> => {
+	let _verts: VECTOR_3D[] = [];
+	let _vertUVs: VECTOR_UV[] = [];
+	let _vertNormals: VECTOR_3D[] = [];
+	let _faceVerts: number[][] = [];
+	let _faceUVs: number[][] = [];
+	let _faceNormals: number[][] = [];
+
+	const rl = createInterface({
+		input: stream,
+		crlfDelay: Infinity
+	});
+
+	for await (const line of rl) {
+		const values = line.split(" ");
+		switch(values[0]) {
+			//load new vertices
+			case "v": {
+				const x = parseFloat(values[1]);
+				const y = parseFloat(values[2]);
+				const z = parseFloat(values[3]);
+				_verts.push(Vector_Initialize(x, y, z));
+			} break;
+			//Load new texture coordinates
+			case "vt": {
+				const u = parseFloat(values[1]);
+				const v = parseFloat(values[2]);
+				let w = null;
+				if (values.length > 3) {
+					w = parseFloat(values[3]);
+				}
+				_vertUVs.push(Vector_UV_Initialize(u, v, w));
+			} break;
+			//Load new vertexNormals
+			case "vn": {
+                const x = parseFloat(values[1]);
+				const y = parseFloat(values[2]);
+				const z = parseFloat(values[3]);
+                _vertNormals.push(Vector_Initialize(x, y, z));
+			} break;
+			//Load new indices
+        	case "f": {
+				//Note that the format for a f command is 
+				//f position_id/uv coords_id/normal_id
+				//obj without textures will be
+				//f position_id//normal_id
+                let pos = [];
+				let uv = [];
+				let normals = [];
+				//Index into each pos/uv/normal triplet
+                for (let i = 0; i < 3; i++) {
+					pos.push(parseInt(values[i + 1].split("/")[0]));
+					uv.push(parseInt(values[i + 1].split("/")[1]));
+					normals.push(parseInt(values[i + 1].split("/")[2]));
+				}
+				_faceVerts.push(pos);
+				_faceUVs.push(uv);
+				_faceNormals.push(normals);
+			} break;
+		}
+	}	
+
+	let mesh: SimpleMesh = {
+		tris: []
+	}
+		//For each triangle face
+	for (let i = 0; i < _faceVerts.length; i++) {
+		const vi1 = _faceVerts[i][0];
+		const vi2 = _faceVerts[i][1];
+		const vi3 = _faceVerts[i][2];
+
+		let uvi1 = 0;
+		let uvi2 = 0;
+		let uvi3 = 0;
+		//TODO: Currently, if no uvs are present, these values will be NaN, but perhaps we don't want to store
+		//large arrays of NaN values
+		uvi1 = _faceUVs[i][0];
+		uvi2 = _faceUVs[i][1];
+		uvi3 = _faceUVs[i][2];
+		if (validateUVIndex(uvi1)) {
+			const tri: Triangle = {
+				p: [_verts[vi1], _verts[vi2], _verts[vi3]],
+				uvCoords: [_vertUVs[uvi1], _vertUVs[uvi2], _vertUVs[uvi3]]
+			}
+			mesh.tris.push(tri);
+		} else {
+			const dummy: VECTOR_UV = Vector_UV_Initialize(0.0, 0.0, 0.0)
+			const tri: Triangle= {
+				p: [_verts[vi1], _verts[vi2], _verts[vi3]],
+				uvCoords: [dummy, dummy, dummy]
+			}
+			mesh.tris.push(tri);
+		}
+	}
+	console.log(_verts);
+	console.log(mesh);
+	return mesh;
+} */
+
 export const SimpleMesh_Load_Model_OBJ = (location: string) : SimpleMesh => {
 	let fileExplorer: XMLHttpRequest = new XMLHttpRequest();
-	//Asynchronously 'get' the model
-	fileExplorer.open("get", location, true)
-	//Send request with null body
-	fileExplorer.send(null);
-
 
 	let _verts: VECTOR_3D[] = [];
 	let _vertUVs: VECTOR_UV[] = [];
@@ -280,12 +382,17 @@ export const SimpleMesh_Load_Model_OBJ = (location: string) : SimpleMesh => {
 
 	//When the file has been opened
 	fileExplorer.onreadystatechange = () => {
-		const {response, readyState, status} = fileExplorer;
-		if (readyState === 4 && status === 200) {
-			parseOBJResponse(response, _verts, _vertUVs, _vertNormals, _faceVerts, _faceUVs, _faceNormals)
+		console.log("Response Text: ")
+		console.log(fileExplorer.responseText);
+		if (fileExplorer.readyState === 4 && fileExplorer.status === 200) {
+			parseOBJResponse(fileExplorer.response, _verts, _vertUVs, _vertNormals, _faceVerts, _faceUVs, _faceNormals)
 		}
 	}
 
+	//Asynchronously 'get' the model
+	fileExplorer.open("get", location, true)
+	//Send request with null body
+	fileExplorer.send(null);
 
 	let mesh: SimpleMesh = {
 		tris: []
@@ -320,6 +427,8 @@ export const SimpleMesh_Load_Model_OBJ = (location: string) : SimpleMesh => {
 		}
 	}
 	console.log(`Successfully loaded mesh from ${location}`);
+	console.log(_verts);
+	console.log(mesh);
 	return mesh;
 }
 
