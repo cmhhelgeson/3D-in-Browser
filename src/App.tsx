@@ -200,7 +200,6 @@ const App = () => {
       if (Vector_DotProduct(triNormal, triTransformed.p[0]) < 0.0) {
 
         //Create Single Direction Light
-
         let light: VECTOR_3D = Vector_Initialize(0.0, 0.0, -1.0);
         light = Vector_Normalise(light);
 

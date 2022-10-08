@@ -8,7 +8,7 @@ export type VECTOR_3D = {
 export type VECTOR_UV = {
     u: number, 
     v: number
-    w: number
+    w: number | null
 }
 
 
@@ -17,8 +17,19 @@ export type Triangle = {
     uvCoords: [VECTOR_UV, VECTOR_UV, VECTOR_UV]
 }
 
-export type Mesh = {
+
+
+export type SimpleMesh = {
     tris: Triangle[]
+}
+
+export type Mesh = {
+    verts: VECTOR_3D[],
+    vertexNormals: VECTOR_3D[],
+    vertexUVs: VECTOR_UV[],
+    faceVerts: number[],
+    faceUVs: number[],
+    faceNormals: number[]   
 }
 
 export type Matrix4x4 = [

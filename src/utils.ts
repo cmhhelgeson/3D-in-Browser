@@ -1,4 +1,62 @@
-import { VECTOR_3D, VECTOR_UV, Matrix4x4, Mesh, Triangle, Bitmap} from "./types"
+import { VECTOR_3D, VECTOR_UV, Matrix4x4, Mesh, Triangle, Bitmap, NewMesh, SimpleMesh} from "./types"
+
+/* VECTOR UTILS */
+//#region
+
+type VectorType = "VECTOR_3D" | "VECTOR_UV"
+
+export const Vector_Initialize = (x: number, y: number, z: number): VECTOR_3D=> {
+	return {x: x, y: y, z: z, w: 1.0}
+}
+
+export const Vector_Add = (v1: VECTOR_3D, v2: VECTOR_3D): VECTOR_3D => {
+    return { x: v1.x + v2.x, y: v1.y + v2.y, z: v1.z + v2.z, w: 1.0};
+}
+
+export const Vector_Sub = (v1: VECTOR_3D, v2: VECTOR_3D): VECTOR_3D => {
+	return { x: v1.x - v2.x, y: v1.y - v2.y, z: v1.z - v2.z, w: 1.0};
+}
+
+export const Vector_Mul = (v1: VECTOR_3D, k: number): VECTOR_3D => {
+	return { x: v1.x * k, y: v1.y * k, z: v1.z * k, w: 1.0};
+}
+
+export const Vector_Div = (v1: VECTOR_3D, k: number): VECTOR_3D => {
+	return { x: v1.x / k, y: v1.y / k, z: v1.z / k, w: 1.0};
+}
+
+export const Vector_DotProduct = (v1: VECTOR_3D, v2: VECTOR_3D): number => {
+	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+}
+
+export const Vector_Length = (v: VECTOR_3D): number => {
+	return Math.sqrt(Vector_DotProduct(v, v));
+}
+
+export const Vector_Normalise = (v: VECTOR_3D): VECTOR_3D => {
+	const l: number = Vector_Length(v);
+	return { x: v.x / l, y: v.y / l, z: v.z / l, w: 1.0};
+}
+
+export const Vector_CrossProduct = (v1: VECTOR_3D, v2: VECTOR_3D): VECTOR_3D => {
+    let v: VECTOR_3D = {x: 0.0, y: 0.0, z: 0.0, w: 1.0}
+	v.x = v1.y * v2.z - v1.z * v2.y;
+	v.y = v1.z * v2.x - v1.x * v2.z;
+	v.z = v1.x * v2.y - v1.y * v2.x;
+	return v;
+}
+
+//#endregion
+
+/* VECTOR UV UTILS */
+//#region 
+
+export const Vector_UV_Initialize = (u: number, v: number, w: number | null = null): VECTOR_UV => {
+	return {u: u, v: v, w: w}
+}
+
+
+//#endregion
 
 /* MESH UTILS */
 //#region
@@ -136,74 +194,180 @@ export const Mesh_OBJ_Has_Texture_Coords = (location: string) : boolean => {
 	return false;
 }
 
-export const Mesh_Load_Model_OBJ = (location: string) => {
+
+const parseOBJResponse = (
+	response: any, 
+	verts: VECTOR_3D[],
+	vertUVs: VECTOR_UV[],
+	vertNormals: VECTOR_3D[],
+	faceVerts: number[][],
+	faceUVs: number[][],
+	faceNormals: number[][]
+) => {
+	const lines = response.split('\n');
+	for (const l of lines) {
+		const values = l.split(" ");
+		switch(values[0]) {
+			//load new vertices
+			case "v": {
+				const x = parseFloat(values[1]);
+				const y = parseFloat(values[2]);
+				const z = parseFloat(values[3]);
+				verts.push(Vector_Initialize(x, y, z));
+			} break;
+			//Load new texture coordinates
+			case "vt": {
+				const u = parseFloat(values[1]);
+				const v = parseFloat(values[2]);
+				let w = null;
+				if (values.length > 3) {
+					w = parseFloat(values[3]);
+				}
+				vertUVs.push(Vector_UV_Initialize(u, v, w));
+			} break;
+			//Load new vertexNormals
+			case "vn": {
+                const x = parseFloat(values[1]);
+				const y = parseFloat(values[2]);
+				const z = parseFloat(values[3]);
+                vertNormals.push(Vector_Initialize(x, y, z));
+			} break;
+			//Load new indices
+        	case "f": {
+				//Note that the format for a f command is 
+				//f position_id/uv coords_id/normal_id
+				//obj without textures will be
+				//f position_id//normal_id
+                let pos = [];
+				let uv = [];
+				let normals = [];
+				//Index into each pos/uv/normal triplet
+                for (let i = 0; i < 3; i++) {
+					pos.push(parseInt(values[i + 1].split("/")[0]));
+					uv.push(parseInt(values[i + 1].split("/")[1]));
+					normals.push(parseInt(values[i + 1].split("/")[2]));
+				}
+				faceVerts.push(pos);
+				faceUVs.push(uv);
+				faceNormals.push(normals);
+			} break;
+
+		}
+	}	
+}
+
+
+type MeshLoadType = "SIMPLE_MESH" | "MESH"
+
+
+const validateUVIndex = (index: any) => {
+	return index === NaN || index === undefined || index === null
+}
+
+export const Mesh_Load_Model_OBJ = (location: string, type: MeshLoadType = "MESH") : Mesh | SimpleMesh => {
 	let fileExplorer: XMLHttpRequest = new XMLHttpRequest();
 	//Asynchronously 'get' the model
 	fileExplorer.open("get", location, true)
 	//Send request with null body
-	fileExplorer.send(null)
+	fileExplorer.send(null);
 
-	let verts = [];
-	let uvCoords = [];
-	let normals = [];
-	let indices = [];
+
+	let verts: VECTOR_3D[] = [];
+	let vertUVs: VECTOR_UV[] = [];
+	let vertNormals: VECTOR_3D[] = [];
+	let faceVerts: number[][] = [];
+	let faceUVs: number[][] = [];
+	let faceNormals: number[][] = [];
 
 	//When the file has been opened
-	fileExplorer.onreadystatechange = () => {
+	fileExplorer.onreadystatechange = (event) => {
 		const {response, readyState, status} = fileExplorer;
 		if (readyState === 4 && status === 200) {
-			const lines = response.split('\n');
-			for (const l of lines) {
-				const values = l.split("");
-				switch(values[0]) {
-					//load new vertices
-					case "v": {
-						const newVerts = [];
-						for (let i = 0; i < 3; i++) {
-							newVerts.push(parseFloat(values[i + 1]));
-						}
-						verts.push(newVerts)
+			parseOBJResponse(response, verts, vertUVs, vertNormals, faceVerts, faceUVs, faceNormals)
+		}
+	}
 
-					} break;
-					//Load new texture coordinates
-					case "vt": {
-						let newUVs = [];
-						for (let i = 0; i < 3; i++) {
-							newUVs.push(parseFloat(values[i + 1]))
-						}
-						uvCoords.push(newUVs);
-					} break;
-					//Load new vertexNormals
-					case "vn": {
-                    	let newNormals = [];
-                        for (let i = 0; i < 3; i++) {
-                            newNormals.push(parseFloat(values[i + 1]))
-						}
-                        normals.push(newNormals);
-					} break;
-					//Load new indices
-                    case "f": {
-						//Note that the format for a f command is 
-						//f position_id/uv coords_id/normal_id
-						//obj without textures will be
-						//f position_id//normal_id
-                    	let newIndices = [];
-                        for (let i = 0; i < 3; i++) {
-                        	let v = [];
-                            for (let j = 0; j < 3; j++)
-                                v.push(parseInt(values[i + 1].split("/")[j]))
-                            newIndices.push(v);
-                        }
-                        indices.push(newIndices);
-					} break;
-					//Load new indices
-				}
+	if (type === "SIMPLE_MESH") {
+		let mesh: SimpleMesh = {
+			tris: []
+		}
+		//For each triangle face
+		for (let i = 0; i < faceVerts.length; i++) {
+			const vi1 = faceVerts[i][0];
+			const vi2 = faceVerts[i][1];
+			const vi3 = faceVerts[i][2];
+
+			let uvi1 = 0;
+			let uvi2 = 0;
+			let uvi3 = 0;
+			//TODO: Currently, if no uvs are present, these values will be NaN, but perhaps we don't want to store
+			//large arrays of NaN values
+			uvi1 = faceUVs[i][0];
+			uvi2 = faceUVs[i][1];
+			uvi3 = faceUVs[i][2];
+			if (validateUVIndex(uvi1)) {
+				
 			}
+			const tri = {
+				p: [verts[vi1], verts[vi2], verts[vi3]],
+				uvCoords: [
+					uvi1 === NaN vertUVs[uvi1], vertUVs[uvi2], vertUVs[uvi3]]
+			}
+			mesh.tris.push[{}]
+
+
 
 		}
 	}
 
 }
+
+
+//Note function will not work without refactoring mesh creation code to consider vertices, indices, normals, etc
+/* export const Populate_Mesh_With_Sphere = (
+	radius: number,
+	latPoints: number,
+	longPoints: number,
+) : Mesh => {
+
+	//Notes:
+	//LATITUDE: North -> South Positions
+	//LONGITUDE: West -> East Positions
+	//There are x longitudinal loops and y latitudinal loops
+	const sphereBase: VECTOR_3D = Vector_Initialize(0.0, 0.0, radius)
+	//How many horizontal loops are there around the sphere, determined by how many latitude points there are
+	const horizontalLoops: number = Math.floor(latPoints); 
+	//How many vertical loops around the sphere, determined by how many longitude points there are
+	const verticalLoops: number = Math.floor(longPoints);
+
+	//Angle for each horizontal loop. Only need to acknowledge half of the circle
+	const centerToHorizontalLoopAngle = Math.PI / horizontalLoops;
+	//Angle for each vertical loop. Vertical loops wrap around entire sphere so we need to acknowledge full circumference of the sphere
+	const centerToVerticalLoopAngle = 2.0 * Math.PI / verticalLoops;
+
+
+	//Go down each horizontal loop of the sphere (excluding the poles) and add vertices of the vertical loops along horizontal loop
+	//For each horizontal loop
+	for (let i = 1; i < horizontalLoops; i++) {
+		//TODO: Might need to replace 4x4 matrix
+		//Rotate base point at northpole by the angle to get base of horizontalLoop
+		const loopBase = Matrix4x4_Cross_Vector(
+			Matrix4x4_MakeRotationX(centerToHorizontalLoopAngle * i),
+			sphereBase
+		);
+		for (let j = 0; j < verticalLoops; j++) {
+
+		}
+
+
+	}
+
+
+	
+
+} */
+
+
 
 export const Populate_Mesh_With_Cube = (
 	originX: number,
@@ -303,63 +467,6 @@ export const Populate_Mesh_With_Cube = (
 
 }
 
-
-
-/* export const LoadModelFromObj = (fileName: string): Mesh => {
-	let newMesh: Mesh = {
-		tris: []
-	};
-	let nullUV: VECTOR_UV = {u: 0.0, v: 0.0,w: 0.0}
-	const fileReader = new FileReader();
-	const vertices: VECTOR_3D[] = [];
-	fileReader.onload = (event: ProgressEvent<FileReader>) => {
-		const fileData = event.target?.result;
-		if (fileData === null || fileData === undefined) {
-			return;
-		}
-		//Split the data on new Lines or the carriage return 
-		//(new line that returns user to top of file) 
-		const lines = (fileData as string).split(/\r\n|\n/);
-		lines.forEach((line) => {
-			if (line[0] === 'v' || line[0] === "V") {
-				let wordArr: string[] = line.split(' ').slice(0, -3);
-				vertices.push({
-					x: parseFloat(wordArr[0]), 
-					y: parseFloat(wordArr[1]), 
-					z: parseFloat(wordArr[2]), 
-					w: 1.0
-				})
-			} else if (line[0] === 'f' || line[0] === "F") {
-				let wordArr: string[] = line.split(' ').slice(0, -3);
-				const firstPoint: number = parseInt(wordArr[0].split('//')[0]);
-				const secondPoint: number = parseInt(wordArr[1].split('//')[0]);
-				const thirdPoint: number = parseInt(wordArr[2].split('//')[0]);
-				//TODO: do something with the after //normal values later
-			
-				//const firstPoint = parseInt(line[1]);
-				//const secondPoint = parseInt(line[2]);
-				//const thirdPoint = parseInt(line[3]);
-				console.log(firstPoint, secondPoint, thirdPoint);
-				//TODO: Correctly assign texture points
-				newMesh.tris.push({
-					p: [
-						vertices[firstPoint], 
-						vertices[secondPoint], 
-						vertices[thirdPoint]
-					], 
-					uvCoords: [nullUV, nullUV, nullUV]
-				})
-			}
-
-		})
-	}
-	fileReader.onerror = (event: ProgressEvent<FileReader>) => {
-		alert(event?.target?.error?.name);
-	}
-	fileReader.readAsText(fileName)
-
-
-} */
 
 //#endregion
 
@@ -496,51 +603,7 @@ export const Matrix4x4_Cross_Matrix4x4 = (
 
 //#endregion
 
-/* VECTOR UTILS */
-//#region
 
-export const Vector_Initialize = (x: number, y: number, z: number) => {
-	return {x: x, y: y, z: z, w: 1.0}
-}
-
-export const Vector_Add = (v1: VECTOR_3D, v2: VECTOR_3D): VECTOR_3D => {
-    return { x: v1.x + v2.x, y: v1.y + v2.y, z: v1.z + v2.z, w: 1.0};
-}
-
-export const Vector_Sub = (v1: VECTOR_3D, v2: VECTOR_3D): VECTOR_3D => {
-	return { x: v1.x - v2.x, y: v1.y - v2.y, z: v1.z - v2.z, w: 1.0};
-}
-
-export const Vector_Mul = (v1: VECTOR_3D, k: number): VECTOR_3D => {
-	return { x: v1.x * k, y: v1.y * k, z: v1.z * k, w: 1.0};
-}
-
-export const Vector_Div = (v1: VECTOR_3D, k: number): VECTOR_3D => {
-	return { x: v1.x / k, y: v1.y / k, z: v1.z / k, w: 1.0};
-}
-
-export const Vector_DotProduct = (v1: VECTOR_3D, v2: VECTOR_3D): number => {
-	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
-}
-
-export const Vector_Length = (v: VECTOR_3D): number => {
-	return Math.sqrt(Vector_DotProduct(v, v));
-}
-
-export const Vector_Normalise = (v: VECTOR_3D): VECTOR_3D => {
-	const l: number = Vector_Length(v);
-	return { x: v.x / l, y: v.y / l, z: v.z / l, w: 1.0};
-}
-
-export const Vector_CrossProduct = (v1: VECTOR_3D, v2: VECTOR_3D): VECTOR_3D => {
-    let v: VECTOR_3D = {x: 0.0, y: 0.0, z: 0.0, w: 1.0}
-	v.x = v1.y * v2.z - v1.z * v2.y;
-	v.y = v1.z * v2.x - v1.x * v2.z;
-	v.z = v1.x * v2.y - v1.y * v2.x;
-	return v;
-}
-
-//#endregion
 
 export const Matrix4x4_PointAt = (
     pos: VECTOR_3D, 
