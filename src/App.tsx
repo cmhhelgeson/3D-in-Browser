@@ -135,32 +135,17 @@ const App = () => {
 
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [demo, setDemo] = useState<number>(1);
-  const [frameTime, setFrameTime] = useState<number>(0);
-  const [meshCube, setMeshCube] = useState<SimpleMesh>(
-    Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)
-  )
-  const [canvas, setCanvas] = useState({
+  const meshCube = useRef<SimpleMesh>(Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 1.0, 1.0, 1.0))
+  const canvasProps = useRef({
     width: 512,
     height: 480,
     pixelWidth: 1,
     pixelHeight: 1,
     ratio: 480/512
   })
-  const [fov, setFov] = useState<number>(90);
-  const [projMat, setProjMat] = useState<Matrix4x4>(Matrix4x4_MakeProjection(90, 490/512, 0.1, 1000))
-  const [gameState, setGameState] = useState<GameState>({
-    meshCube: Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 1.0, 1.0, 1.0),
-    canvas: {
-      width: 512,
-      height: 480,
-      pixelWidth: 1,
-      pixelHeight: 1,
-      ratio: 480/512
-    },
-    fov: 90,
-    projMat: Matrix4x4_MakeProjection(90, 490/512, 0.1, 1000)
-  })
+  const fov = useRef<number>(90);
+  const projMat = useRef<Matrix4x4>(Matrix4x4_MakeProjection(fov.current, canvasProps.current.ratio, 0.1, 1000))
+
   const fTheta = useRef(0);
 
   const getCanvasWithContext = (canvas = canvasRef.current) => {
@@ -200,7 +185,7 @@ const App = () => {
     
     
     let colorIndex = 0;
-    gameState.meshCube.tris.forEach((tri, idx) => {
+    meshCube.current.tris.forEach((tri, idx) => {
       let triTransformed: Triangle = {
         p: [
           Matrix4x4_Cross_Vector(worldMatrix, tri.p[0]),
@@ -254,9 +239,9 @@ const App = () => {
 
         let triProjected: Triangle = {
           p: [
-            Matrix4x4_Cross_Vector(gameState.projMat, triTransformed.p[0]),
-            Matrix4x4_Cross_Vector(gameState.projMat, triTransformed.p[1]),
-            Matrix4x4_Cross_Vector(gameState.projMat, triTransformed.p[2]),
+            Matrix4x4_Cross_Vector(projMat.current, triTransformed.p[0]),
+            Matrix4x4_Cross_Vector(projMat.current, triTransformed.p[1]),
+            Matrix4x4_Cross_Vector(projMat.current, triTransformed.p[2]),
           ], 
           uvCoords: triTransformed.uvCoords,
         }
@@ -269,12 +254,12 @@ const App = () => {
         triProjected.p[0].x += 1.0; triProjected.p[0].y += 1.0;
 			  triProjected.p[1].x += 1.0; triProjected.p[1].y += 1.0;
 			  triProjected.p[2].x += 1.0; triProjected.p[2].y += 1.0;
-			  triProjected.p[0].x *= 0.5 * gameState.canvas.width;
-			  triProjected.p[0].y *= 0.5 * gameState.canvas.height;
-			  triProjected.p[1].x *= 0.5 * gameState.canvas.width
-			  triProjected.p[1].y *= 0.5 * gameState.canvas.height;
-			  triProjected.p[2].x *= 0.5 * gameState.canvas.width;
-			  triProjected.p[2].y *= 0.5 * gameState.canvas.height; 
+			  triProjected.p[0].x *= 0.5 * canvasProps.current.width;
+			  triProjected.p[0].y *= 0.5 * canvasProps.current.height;
+			  triProjected.p[1].x *= 0.5 * canvasProps.current.width
+			  triProjected.p[1].y *= 0.5 * canvasProps.current.height;
+			  triProjected.p[2].x *= 0.5 * canvasProps.current.width;
+			  triProjected.p[2].y *= 0.5 * canvasProps.current.height; 
 
         DrawTriangle(triProjected.p[0].x, triProjected.p[0].y,
 				  triProjected.p[1].x, triProjected.p[1].y,
@@ -288,6 +273,7 @@ const App = () => {
     
   }
 
+  //TODO: Prime example of why we shouldn't be using react do this
   const handleKeyPress = useCallback((event: any) => {
     const {key} = event;
     switch (key) {
@@ -298,29 +284,21 @@ const App = () => {
       case "s":
       case "ArrowDown":
         console.log("Pressed Down");
-        console.log(gameState.projMat);
+        console.log(projMat);
         break;
       case "e": 
       case "ArrowRight": 
         console.log("Pressed Right")
-        console.log(gameState.fov)
-        const rightFov = gameState.fov + 10;
-        setGameState({
-          ...gameState, 
-          fov: rightFov, 
-          projMat: Matrix4x4_MakeProjection(rightFov, gameState.canvas.ratio, 0.1, 1000)
-        });
+        console.log(fov)
+        fov.current = fov.current + 10;
+        projMat.current = Matrix4x4_MakeProjection(fov.current, canvasProps.current.ratio, 0.1, 1000);
         break;
       case "a":
       case "ArrowLeft": 
         console.log("Pressed Left");
-        const newFov = gameState.fov - 10;
-        console.log(newFov)
-        setGameState({
-          ...gameState, 
-          fov: newFov, 
-          projMat: Matrix4x4_MakeProjection(newFov, gameState.canvas.ratio, 0.1, 1000)
-        });
+        console.log(fov);
+        fov.current = fov.current - 10;
+        projMat.current = Matrix4x4_MakeProjection(fov.current, canvasProps.current.ratio, 0.1, 1000);
         break;
       default:
         console.log("default case");
@@ -338,18 +316,31 @@ const App = () => {
     start = then;
     elapsed = 0;
     requestAnimationFrame(() => draw());
-  }, [handleKeyPress, draw]);
+  }, [handleKeyPress]);
   
 
 
   return (
     <div className="App">
       <canvas id="canvas" 
-      width={gameState.canvas.width * gameState.canvas.ratio}
-      height={gameState.canvas.height * gameState.canvas.ratio}
+      width={canvasProps.current.width * canvasProps.current.ratio}
+      height={canvasProps.current.height * canvasProps.current.ratio}
       ref={canvasRef}></canvas>
     </div>
   );
 }
 
 export default App;
+
+  /*const [gameState, setGameState] = useState<GameState>({
+    meshCube: Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 1.0, 1.0, 1.0),
+    canvas: {
+      width: 512,
+      height: 480,
+      pixelWidth: 1,
+      pixelHeight: 1,
+      ratio: 480/512
+    },
+    fov: 90,
+    projMat: Matrix4x4_MakeProjection(90, 490/512, 0.1, 1000)
+  }) */
