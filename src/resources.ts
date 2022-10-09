@@ -1,6 +1,19 @@
 
-let models: any = {
-    cube: "./models/cube.obj"
+import {SimpleMesh, Mesh} from "./types"
+import { Populate_Mesh_With_Cube } from "./utils"
+
+type ModelResourceType = {
+    cube: {
+        url: string,
+        model: SimpleMesh
+    }
+}
+
+let models: ModelResourceType = {
+    cube: {
+        url: "./models/cube.txt",
+        model: Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 5.0, 5.0, 1.0),
+    }
 }
 
 export {models}

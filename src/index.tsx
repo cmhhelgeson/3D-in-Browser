@@ -5,17 +5,22 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import * as Resources from "./resources"
 import { SimpleMesh_Load_Model_OBJ } from './utils';
+import { SimpleMesh } from './types';
+
+
+
+const cubeURL = Resources.models["cube"].url;
+SimpleMesh_Load_Model_OBJ(cubeURL).then((mesh) => {
+  Resources.models["cube"].model = mesh;
+})
+
+
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 
-for (const key in Resources.models) {
-  if (Object.hasOwnProperty.call(Resources.models, key)) {
-    const url: string = Resources.models[key];
-    Resources.models[key] = SimpleMesh_Load_Model_OBJ(url);
-  }
-}
+
 
 
 root.render(
