@@ -1,11 +1,9 @@
-import { VECTOR_3D, Matrix4x4, VECTOR_UV} from "./types";
+import { VECTOR_3D, Matrix4x4} from "./types";
 import { 
     Vector_Normalise, 
     Vector_CrossProduct,
     Vector_Sub,
     Vector_DotProduct,
-    Vector_Initialize,
-    Vector_Div,
     Vector_Mul
 } from "./Vector3DUtils";
 

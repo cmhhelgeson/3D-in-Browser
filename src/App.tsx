@@ -39,12 +39,9 @@ const colors = [
 ]
 
 
-let start: number
-let then: number
-let elapsed: number;
+
 let lastRun: number;
 let fps: number;
-let currentFrameId: number;
 
 
 
@@ -198,7 +195,7 @@ const App = () => {
 
       
     })
-    currentFrameId = requestAnimationFrame(() => draw());  
+    requestAnimationFrame(() => draw());  
   }
 
   //TODO: Prime example of why we shouldn't be using react do this
@@ -237,15 +234,9 @@ const App = () => {
   //@componentDidMount()
   useEffect(() => {
     document.addEventListener("keydown", handleKeyPress);
+    requestAnimationFrame(() => draw())
   }, [])
 
-  useEffect(() => {
-    then = Date.now();
-    start = then;
-    elapsed = 0;
-    currentFrameId = requestAnimationFrame(() => draw());
-  }, [handleKeyPress]); 
-  
 
   return (
     <div className="App">
