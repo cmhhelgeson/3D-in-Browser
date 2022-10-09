@@ -227,12 +227,13 @@ const drawMesh = (
 				  color, context);
       }
     })
+
 }
 
 const App = () => {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [meshCube, setMeshCube] = useState<SimpleMesh>(Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 5.0, 5.0, 1.0));
+  //const meshCube = useRef<SimpleMesh>(Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 5.0, 5.0, 1.0));
   const canvasProps = useRef({
     width: 512,
     height: 480,
@@ -240,7 +241,7 @@ const App = () => {
     pixelHeight: 1,
     ratio: 480/512
   })
-  const fov = useRef<number>(90);
+  /*const fov = useRef<number>(90);
   const projMat = useRef<Matrix4x4>(Matrix4x4_MakeProjection(fov.current, canvasProps.current.ratio, 0.1, 1000))
 
   const fTheta = useRef(0);
@@ -267,10 +268,10 @@ const App = () => {
 
     fTheta.current += 0.5 * delta;
 
-    drawMesh(canvas, context, fTheta.current, projMat.current, meshCube);
+    drawMesh(canvas, context, fTheta.current, projMat.current, meshCube.current);
 
     //Drawing Code
-    /*context.clearRect(0, 0, canvas.width, canvas.height);
+    context.clearRect(0, 0, canvas.width, canvas.height);
     context.fillStyle = "black";
     context.fillRect(0, 0, canvas.width, canvas.height);
     //Create World Matrix
@@ -367,7 +368,7 @@ const App = () => {
       }
 
       
-    }) */
+    })
     currentFrameId = requestAnimationFrame(() => draw());  
   }, [meshCube])
 
@@ -409,25 +410,23 @@ const App = () => {
     document.addEventListener("keydown", handleKeyPress);
     SimpleMesh_Load_Model_OBJ("/models/cube.obj").then((mesh) => {
       console.log(mesh);
-      setMeshCube(mesh);
+      cancelAnimationFrame(currentFrameId);
+      meshCube.current = mesh;
+      setTimeout(() => {
+        console.log("bleh")
+      }, 1000)
     })
   }, [])
-
-  useEffect(() => {
-    cancelAnimationFrame(currentFrameId);
-    requestAnimationFrame(draw);
-    
-  }, [meshCube]) 
 
   useEffect(() => {
     then = Date.now();
     start = then;
     elapsed = 0;
     currentFrameId = requestAnimationFrame(() => draw());
-  }, [handleKeyPress]);
+  }, [handleKeyPress]); */
   
 
-
+ 
   return (
     <div className="App">
       <canvas id="canvas" 
@@ -439,16 +438,3 @@ const App = () => {
 }
 
 export default App;
-
-  /*const [gameState, setGameState] = useState<GameState>({
-    meshCube: Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 1.0, 1.0, 1.0),
-    canvas: {
-      width: 512,
-      height: 480,
-      pixelWidth: 1,
-      pixelHeight: 1,
-      ratio: 480/512
-    },
-    fov: 90,
-    projMat: Matrix4x4_MakeProjection(90, 490/512, 0.1, 1000)
-  }) */
