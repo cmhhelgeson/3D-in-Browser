@@ -1,6 +1,6 @@
 
-import {SimpleMesh, Mesh} from "./types"
-import { Populate_Mesh_With_Cube } from "./utils"
+import {SimpleMesh} from "./utils/types"
+import { Populate_Mesh_With_Cube } from "./utils/MeshUtils"
 
 type ModelResourceType = {
     cube: {

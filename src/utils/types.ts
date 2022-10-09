@@ -54,3 +54,16 @@ export type Bitmap = {
     height: number,
     pixels: Uint32Array
 }
+
+type GameState = {
+    meshCube: SimpleMesh,
+    canvas: {
+      width: number,
+      height: number
+      pixelWidth: number,
+      pixelHeight: number,
+      ratio:  number,
+    }, 
+    fov: number,
+    projMat: Matrix4x4
+}
