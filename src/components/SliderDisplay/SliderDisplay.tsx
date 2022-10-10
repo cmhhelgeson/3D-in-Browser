@@ -1,6 +1,7 @@
 import React, {useState} from "react";
 import { callbackify } from "util";
 import { GenericXPWindow } from "../GenericXPWindow";
+import styles from "./SliderDisplay.module.css"
 
 
 type SliderParams = {
@@ -25,9 +26,9 @@ const Slider = ({label, lowVal, highVal, valueToChange, lowValLabel, highValLabe
     }
 
     const step = (highVal - lowVal) / 100;
-    return (<div className="field-row" style={{"width": "100%", "display": "flex", "justifyContent": "space-evenly"}}>
+    return (<div className={`field-row ${styles.field_row_adjust}`}>
         <div>{label}</div>
-        <div className="slider" style={{"display": "flex", "justifyContent": "start"}}>
+        <div className={`slider ${styles.slider_adjust}`}>
             <div>{lowValLabel ? lowValLabel : lowVal.toString()}</div>
             <input id="range26" type="range" min={lowVal.toString()} max={highVal.toString()} step={step} value={localState} onChange={handleChange}/>
             <label htmlFor="range27">{highValLabel ? highValLabel : highVal.toString()}</label>
