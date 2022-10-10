@@ -27,6 +27,7 @@ import {VECTOR_3D, Matrix4x4, Triangle, SimpleMesh} from "./utils/types"
 import * as Resources from "./resources"
 import { GenericXPWindow } from './components/GenericXPWindow';
 import axios from 'axios';
+import { SliderDisplay } from './components/SliderDisplay';
 
 const colors = [
   //red, orange, yellow, green, blue, purple, cyan, teal, pink
@@ -61,6 +62,8 @@ type GameState = {
   projMat: Matrix4x4
 }
 
+
+
 const App = () => {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -73,9 +76,30 @@ const App = () => {
   })
   const meshRef = useRef<SimpleMesh>(Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 5.0, 1.0, 5.0));
   const [meshState, setMeshState] = useState(Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 5.0, 1.0, 5.0));
+  const light = useRef<VECTOR_3D>(Vector_Initialize(0.0, 0.0, -1.0))
   const [meshText, setMeshText] = useState<string>("");
   const fov = useRef<number>(90);
   const projMat = useRef<Matrix4x4>(Matrix4x4_MakeProjection(fov.current, canvasProps.current.ratio, 0.1, 1000))
+
+  const sliders = [
+    {
+      label: "Light X Direction:",
+      lowVal: -5.0,
+      highVal: 5.0
+    },
+    {
+      label: "Light Y Direction:",
+      lowVal: -5.0,
+      highVal: 5.0
+    },
+    {
+    label: "Light Z Direction:",
+    lowVal: -5.0,
+    highVal: 5.0,
+    valueToChange: light
+    }
+  
+  ]
 
   const fTheta = useRef(0);
 
@@ -148,10 +172,10 @@ const App = () => {
       if (Vector_DotProduct(triNormal, triTransformed.p[0]) < 0.0) {
 
         //Create Single Direction Light
-        let light: VECTOR_3D = Vector_Initialize(0.0, 0.0, -1.0);
-        light = Vector_Normalise(light);
+        let usedLight: VECTOR_3D = light.current
+        usedLight = Vector_Normalise(usedLight);
 
-        const lightToNormal: number = Vector_DotProduct(triNormal, light);
+        const lightToNormal: number = Vector_DotProduct(triNormal, usedLight);
         //get r g b values from string
         const initialColor = colors[colorIndex].match(/(\d+)/g);
         let r = 255;
@@ -266,6 +290,8 @@ const App = () => {
         height={canvasProps.current.height * canvasProps.current.ratio}
         ref={canvasRef}></canvas>
       </GenericXPWindow>
+      <SliderDisplay sliders={sliders} text="Gabagool"/>
+      
     </div>
   );
 }
