@@ -7,21 +7,20 @@ type SliderParams = {
     label: string
     lowVal: number
     highVal: number
-    valueToChange?: React.Dispatch<React.SetStateAction<any>>
+    valueToChange?: any,
+    setState?: any
     lowValLabel?: string
     highValLabel?: string
 }
 
 
-const Slider = ({label, lowVal, highVal, valueToChange, lowValLabel, highValLabel}: SliderParams) => {
+const Slider = ({label, lowVal, highVal, setState, valueToChange, lowValLabel, highValLabel}: SliderParams) => {
 
     const [localState, setLocalState] = useState<number>(0);
 
     const handleChange = (event: any) => {
         setLocalState(event.target.value);
-        if (valueToChange) {
-            valueToChange(event.target.value);
-        }
+        setState([0, -5.0, -1.0])
     }
 
     const step = (highVal - lowVal) / 100;

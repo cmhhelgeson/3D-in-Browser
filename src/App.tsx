@@ -28,6 +28,7 @@ import * as Resources from "./resources"
 import { GenericXPWindow } from './components/GenericXPWindow';
 import axios from 'axios';
 import { SliderDisplay } from './components/SliderDisplay';
+import { getHashes } from 'crypto';
 
 const colors = [
   //red, orange, yellow, green, blue, purple, cyan, teal, pink
@@ -76,21 +77,22 @@ const App = () => {
   })
   const meshRef = useRef<SimpleMesh>(Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 5.0, 1.0, 5.0));
   const [meshState, setMeshState] = useState(Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 5.0, 1.0, 5.0));
-  const [light, setLight] = useState<VECTOR_3D>(Vector_Initialize(0.0, 0.0, -1.0));
+  const [sliderState, setSliderState] = useState([0.0, 0.0, 0.0]);
+  const light = useRef<VECTOR_3D>(Vector_Initialize(0.0, 0.0, -1.0));
   const [meshText, setMeshText] = useState<string>("");
   const fov = useRef<number>(90);
   const projMat = useRef<Matrix4x4>(Matrix4x4_MakeProjection(fov.current, canvasProps.current.ratio, 0.1, 1000))
 
   const setLightX = (_x: number) => {
-    setLight({x: _x, y: light.y, z: light.z, w: light.w});
+    light.current.x = _x;
   }
 
   const setLightY = (_y: number) => {
-    setLight({x: light.x, y: _y, z: light.z, w: light.w})
+    light.current.y = _y;
   }
 
   const setLightZ = (_z: number) => {
-    setLight({x: light.x, y: light.y, z: _z, w: light.w})
+    light.current.z = _z;
   }
 
   const sliders = [
@@ -98,19 +100,16 @@ const App = () => {
       label: "Light X Direction:",
       lowVal: -5.0,
       highVal: 5.0,
-      valueToChange: setLightX
     },
     {
       label: "Light Y Direction:",
       lowVal: -5.0,
       highVal: 5.0,
-      valueToChange: setLightY
     },
     {
       label: "Light Z Direction:",
       lowVal: -5.0,
       highVal: 5.0,
-      valueToChange: setLightZ
     }
   
   ]
@@ -186,7 +185,7 @@ const App = () => {
       if (Vector_DotProduct(triNormal, triTransformed.p[0]) < 0.0) {
 
         //Create Single Direction Light
-        let usedLight: VECTOR_3D = light;
+        let usedLight: VECTOR_3D = light.current
         usedLight = Vector_Normalise(usedLight);
 
         const lightToNormal: number = Vector_DotProduct(triNormal, usedLight);
@@ -279,7 +278,7 @@ const App = () => {
   useEffect(() => {
 
     const getMeshData = async () => {
-      const s = await axios.get("/models/cube.txt")
+      const s = await axios.get("/models/cube.obj")
       const data: string = await s.data;
       setMeshText(data);
     }
@@ -289,7 +288,6 @@ const App = () => {
   }, [])
 
   useEffect(() => {
-    console.log(meshText);
     const mesh = SimpleMesh_Load_Model_OBJ(meshText);
     meshRef.current = mesh
 

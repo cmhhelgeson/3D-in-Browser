@@ -1,8 +1,12 @@
-import { VECTOR_3D, Triangle, VECTOR_UV, Mesh, SimpleMesh } from "./types";
+import { VECTOR_3D, Triangle, VECTOR_UV, Mesh, SimpleMesh, Matrix4x4 } from "./types";
 
 import { Vector_Initialize } from "./Vector3DUtils";
 import { Vector_UV_Initialize } from "./VectorUVUtils";
-import axios from "axios";
+import { 
+	Matrix4x4_Cross_Vector, 
+	Matrix4x4_MakeRotationX,
+	Matrix4x4_MakeRotationZ
+} from "./Matrix4x4Utils";
 
 
 export const Mesh_Load_Model_FTL_BINARY = (location: string) => {
@@ -47,12 +51,10 @@ const parseOBJResponse = (
 	const lines = response.split('\n');
 	for (const l of lines) {
 		const values = l.split(" ");
-        console.log("values:")
         if (values[values.length - 1].includes("\r")) {
             values[values.length - 1] = values[values.length - 1].slice(0, -1)
 
         }
-        console.log(values)
 		switch(values[0]) {
 			//load new vertices
 			case "v": {
@@ -89,9 +91,9 @@ const parseOBJResponse = (
 				let normals = [];
 				//Index into each pos/uv/normal triplet
                 for (let i = 0; i < 3; i++) {
-					pos.push(parseInt(values[i + 1].split("/")[0]));
-					uv.push(parseInt(values[i + 1].split("/")[1]));
-					normals.push(parseInt(values[i + 1].split("/")[2]));
+					pos.push( parseInt(values[i + 1].split("/")[0]) - 1);
+					uv.push(parseInt(values[i + 1].split("/")[1]) - 1);
+					normals.push(parseInt(values[i + 1].split("/")[2]) - 1);
 				}
 				faceVerts.push(pos);
 				faceUVs.push(uv);
@@ -124,21 +126,18 @@ export const SimpleMesh_Load_Model_OBJ = (data: string) =>  {
 	}
 	//For each triangle face
 	for (let i = 0; i < _faceVerts.length; i++) {
-		const vi1 = _faceVerts[i][0] - 1;
-		const vi2 = _faceVerts[i][1] - 1;
-		const vi3 = _faceVerts[i][2] - 1;
-
-        console.log("Vert Indices: ")
-        console.log(vi1, vi2, vi3)
+		const vi1 = _faceVerts[i][0];
+		const vi2 = _faceVerts[i][1];
+		const vi3 = _faceVerts[i][2];
 	
 		let uvi1 = 0;
 		let uvi2 = 0;
 		let uvi3 = 0;
 		//TODO: Currently, if no uvs are present, these values will be NaN, but perhaps we don't want to store
 		//large arrays of NaN values
-		uvi1 = _faceUVs[i][0] - 1;
-		uvi2 = _faceUVs[i][1] - 1;
-		uvi3 = _faceUVs[i][2] - 1;
+		uvi1 = _faceUVs[i][0];
+		uvi2 = _faceUVs[i][1];
+		uvi3 = _faceUVs[i][2];
 		if (validateUVIndex(uvi1)) {
 			const tri: Triangle = {
 				p: [_verts[vi1], _verts[vi2], _verts[vi3]],
@@ -157,47 +156,33 @@ export const SimpleMesh_Load_Model_OBJ = (data: string) =>  {
     return mesh;
 }
 
-
-
-/* export const Mesh_Load_Model_OBJ = (location: string) : Mesh => {
-	let fileExplorer: XMLHttpRequest = new XMLHttpRequest();
-	//Asynchronously 'get' the model
-	fileExplorer.open("get", location, true)
-	//Send request with null body
-	fileExplorer.send(null);
-
-
+export const Mesh_Load_Model_Obj = (data: string) => {
 	let _verts: VECTOR_3D[] = [];
 	let _vertUVs: VECTOR_UV[] = [];
 	let _vertNormals: VECTOR_3D[] = [];
 	let _faceVerts: number[][] = [];
 	let _faceUVs: number[][] = [];
 	let _faceNormals: number[][] = [];
-
-	//When the file has been opened
-	fileExplorer.onreadystatechange = (event) => {
-		const {response, readyState, status} = fileExplorer;
-		if (readyState === 4 && status === 200) {
-			parseOBJResponse(response, _verts, _vertUVs, _vertNormals, _faceVerts, _faceUVs, _faceNormals)
-		}
-	}
+	parseOBJResponse(
+		data, _verts, _vertUVs, _vertNormals, 
+		_faceVerts, _faceUVs, _faceNormals
+	);
 
 	let mesh: Mesh = {
 		verts: _verts,
-		vertexUVs: _vertUVs,
-		vertexNormals: _vertNormals,
-		faceVerts: _faceVerts,
+		vertexUVs: _vertUVs, 
 		faceUVs: _faceUVs,
-		faceNormals: _faceNormals
+		faceNormals: _faceNormals,
+		faceVerts: _faceVerts,
+		vertexNormals: _vertNormals
 	}
 
 	return mesh;
-
-} */
+}
 
 
 //Note function will not work without refactoring mesh creation code to consider vertices, indices, normals, etc
-/* export const Populate_Mesh_With_Sphere = (
+export const Populate_Mesh_With_Sphere = (
 	radius: number,
 	latPoints: number,
 	longPoints: number,
@@ -219,26 +204,59 @@ export const SimpleMesh_Load_Model_OBJ = (data: string) =>  {
 	const centerToVerticalLoopAngle = 2.0 * Math.PI / verticalLoops;
 
 
+	let sphere: Mesh = {
+		verts: [],
+		vertexUVs: [],
+		vertexNormals: [],
+		faceVerts: [],
+		faceUVs: [],
+		faceNormals:[]
+	}
 	//Go down each horizontal loop of the sphere (excluding the poles) and add vertices of the vertical loops along horizontal loop
 	//For each horizontal loop
 	for (let i = 1; i < horizontalLoops; i++) {
 		//TODO: Might need to replace 4x4 matrix
 		//Rotate base point at northpole by the angle to get base of horizontalLoop
-		const loopBase = Matrix4x4_Cross_Vector(
+		const hLoopBase = Matrix4x4_Cross_Vector(
 			Matrix4x4_MakeRotationX(centerToHorizontalLoopAngle * i),
 			sphereBase
 		);
 		for (let j = 0; j < verticalLoops; j++) {
-
+			let vertex = 
+			Matrix4x4_Cross_Vector(
+				Matrix4x4_MakeRotationZ(centerToVerticalLoopAngle * j),
+				hLoopBase
+			)
+			sphere.verts.push(vertex);				
 		}
-
-
 	}
 
+	const calculateIndice = (h: number, v: number) => {
+		return (h * verticalLoops) + v;
+	}
 
-	
+	for (let h = 0; h < horizontalLoops - 2; h++) {
+		for (let v = 0; v < verticalLoops - 1; v++) {
+			//TODO: These indices might be in wrong order
+			let indiceOne: number = calculateIndice(h + 1, v);
+			let indiceTwo: number = calculateIndice(h, v);
+			let indiceThree: number = calculateIndice(h, v + 1);
 
-} */
+			let arr: number[] = [indiceOne, indiceTwo, indiceThree];
+
+			sphere.faceVerts.push(arr);
+
+			indiceOne = calculateIndice(h, v + 1);
+			indiceTwo = calculateIndice(h + 1, v);
+			indiceThree = calculateIndice(h + 1, v + 1);
+
+			arr = [indiceOne, indiceTwo, indiceThree];
+			sphere.faceVerts.push(arr);
+		}
+	}
+	return sphere;
+
+}
 
 
 
@@ -338,3 +356,99 @@ export const Populate_Mesh_With_Cube = (
 	}) 
 	return newMesh;
 }
+
+/* export const DrawMesh = (
+	mesh: Mesh,
+	worldMatrix: Matrix4x4,
+	context: CanvasRenderingContext2D,
+) => {
+	mesh.faceVerts.forEach((face, idx) => {
+		const vi1 = face[0];
+		const vi2 = face[1];
+		const vi3 = face[2];
+		
+		let triTransformed: Triangle = {
+        	p: [
+         		Matrix4x4_Cross_Vector(worldMatrix, tri.p[0]),
+          		Matrix4x4_Cross_Vector(worldMatrix, tri.p[1]),
+          		Matrix4x4_Cross_Vector(worldMatrix, tri.p[2]),
+        	], 
+        	uvCoords: [Vector_U] 
+      	}
+
+
+      //Cross Product Calculations
+      let triVecOne: VECTOR_3D = Vector_Sub(triTransformed.p[1], triTransformed.p[0]);
+      let triVecTwo: VECTOR_3D = Vector_Sub(triTransformed.p[2], triTransformed.p[1]);
+
+
+      //The normal of the vector is the cross product of the two vectors that make up the triangle
+      //Or find using the determinant of the matrix produced when finding the area
+      let triNormal: VECTOR_3D = Vector_CrossProduct(triVecOne, triVecTwo);
+      //let triMiddle: VECTOR_3D = Triangle_Get_Centroid(triTransformed);
+      
+
+      triNormal = Vector_Normalise(triNormal);
+      colorIndex = (colorIndex + 1) % colors.length;
+
+      //Take the dot product of the triangleNormal and the camera eye vector
+      //If the normal is perpendicular to or forms an obtuse angle with the
+      //Camera eye vector, then the projection of the normal will be <=0
+      if (Vector_DotProduct(triNormal, triTransformed.p[0]) < 0.0) {
+
+        //Create Single Direction Light
+        let usedLight: VECTOR_3D = light.current
+        usedLight = Vector_Normalise(usedLight);
+
+        const lightToNormal: number = Vector_DotProduct(triNormal, usedLight);
+        //get r g b values from string
+        const initialColor = colors[colorIndex].match(/(\d+)/g);
+        let r = 255;
+        let g = 255;
+        let b = 255;
+
+        if (initialColor && initialColor.length >= 3) {
+          r = parseInt(initialColor[0]);
+          g = parseInt(initialColor[1]);
+          b = parseInt(initialColor[2])
+        }
+        r = lightToNormal * r;
+        g = lightToNormal * g;
+        b = lightToNormal * b;
+        
+        const color = `rgba(${r} ${g} ${b})`;
+
+        let triProjected: Triangle = {
+          p: [
+            Matrix4x4_Cross_Vector(projMat.current, triTransformed.p[0]),
+            Matrix4x4_Cross_Vector(projMat.current, triTransformed.p[1]),
+            Matrix4x4_Cross_Vector(projMat.current, triTransformed.p[2]),
+          ], 
+          uvCoords: triTransformed.uvCoords,
+        }
+
+        triProjected.p[0] = Vector_Div(triProjected.p[0], triProjected.p[0].w);
+        triProjected.p[1] = Vector_Div(triProjected.p[1], triProjected.p[1].w);
+        triProjected.p[2] = Vector_Div(triProjected.p[2], triProjected.p[2].w);
+
+        //Scale into screen view
+        triProjected.p[0].x += 1.0; triProjected.p[0].y += 1.0;
+			  triProjected.p[1].x += 1.0; triProjected.p[1].y += 1.0;
+			  triProjected.p[2].x += 1.0; triProjected.p[2].y += 1.0;
+			  triProjected.p[0].x *= 0.5 * canvasProps.current.width;
+			  triProjected.p[0].y *= 0.5 * canvasProps.current.height;
+			  triProjected.p[1].x *= 0.5 * canvasProps.current.width
+			  triProjected.p[1].y *= 0.5 * canvasProps.current.height;
+			  triProjected.p[2].x *= 0.5 * canvasProps.current.width;
+			  triProjected.p[2].y *= 0.5 * canvasProps.current.height; 
+
+        DrawTriangle(triProjected.p[0].x, triProjected.p[0].y,
+				  triProjected.p[1].x, triProjected.p[1].y,
+				  triProjected.p[2].x, triProjected.p[2].y,
+				  color, context);
+      }
+
+      
+    })
+
+} */
