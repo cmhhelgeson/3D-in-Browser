@@ -1,5 +1,4 @@
 import React, {useState} from "react";
-import { callbackify } from "util";
 import { GenericXPWindow } from "../GenericXPWindow";
 import styles from "./SliderDisplay.module.css"
 
@@ -8,7 +7,7 @@ type SliderParams = {
     label: string
     lowVal: number
     highVal: number
-    valueToChange?: any
+    valueToChange?: React.Dispatch<React.SetStateAction<any>>
     lowValLabel?: string
     highValLabel?: string
 }
@@ -21,7 +20,7 @@ const Slider = ({label, lowVal, highVal, valueToChange, lowValLabel, highValLabe
     const handleChange = (event: any) => {
         setLocalState(event.target.value);
         if (valueToChange) {
-            valueToChange.current.z = event.target.value;
+            valueToChange(event.target.value);
         }
     }
 
