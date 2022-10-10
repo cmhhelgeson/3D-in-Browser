@@ -1,4 +1,4 @@
-import React, {useRef, useEffect, useCallback} from 'react'
+import React, {useRef, useState, useEffect, useCallback} from 'react'
 import './App.css';
 import {
   Vector_Initialize,
@@ -21,9 +21,12 @@ import {
   DrawTriangle, 
 } from './utils/drawUtils';
 
+import { Populate_Mesh_With_Cube, SimpleMesh_Load_Model_OBJ } from './utils/MeshUtils';
+
 import {VECTOR_3D, Matrix4x4, Triangle, SimpleMesh} from "./utils/types"
 import * as Resources from "./resources"
 import { GenericXPWindow } from './components/GenericXPWindow';
+import axios from 'axios';
 
 const colors = [
   //red, orange, yellow, green, blue, purple, cyan, teal, pink
@@ -68,6 +71,9 @@ const App = () => {
     pixelHeight: 1,
     ratio: 480/512
   })
+  const meshRef = useRef<SimpleMesh>(Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 5.0, 1.0, 5.0));
+  const [meshState, setMeshState] = useState(Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 5.0, 1.0, 5.0));
+  const [meshText, setMeshText] = useState<string>("");
   const fov = useRef<number>(90);
   const projMat = useRef<Matrix4x4>(Matrix4x4_MakeProjection(fov.current, canvasProps.current.ratio, 0.1, 1000))
 
@@ -111,7 +117,7 @@ const App = () => {
 
     
     let colorIndex = 0;
-    Resources.models["cube"].model.tris.forEach((tri, idx) => {
+    meshRef.current.tris.forEach((tri, idx) => {
       let triTransformed = {
         p: [
           Matrix4x4_Cross_Vector(worldMatrix, tri.p[0]),
@@ -233,9 +239,23 @@ const App = () => {
 
   //@componentDidMount()
   useEffect(() => {
+
+    const getMeshData = async () => {
+      const s = await axios.get("/models/cube.txt")
+      const data: string = await s.data;
+      setMeshText(data);
+    }
     document.addEventListener("keydown", handleKeyPress);
+    getMeshData();
     requestAnimationFrame(() => draw())
   }, [])
+
+  useEffect(() => {
+    console.log(meshText);
+    const mesh = SimpleMesh_Load_Model_OBJ(meshText);
+    meshRef.current = mesh
+
+  }, [meshText])
 
 
   return (

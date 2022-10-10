@@ -1,6 +1,6 @@
 import { VECTOR_3D } from "./types";
 
-export const Vector_Initialize = (x: number, y: number, z: number): VECTOR_3D=> {
+export const Vector_Initialize = (x: number, y: number, z: number): VECTOR_3D => {
 	return {x: x, y: y, z: z, w: 1.0}
 }
 

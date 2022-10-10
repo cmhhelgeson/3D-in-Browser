@@ -49,7 +49,6 @@ export const resizeRefWith = (
   if (!resizedRef.current || !resizeWith.current) {
       return;
   }
-  console.log("Make resizable");
   interact(resizeWith.current).resizable({
       edges: {bottom: true, right: true},
       listeners: {
@@ -63,11 +62,9 @@ export const resizeRefWith = (
             let {width, height} = event.rect;
             resizedRef.current.style.width = `${width}px`
             resizedRef.current.style.height = `${height}px`
-            console.log("moved")
           }
         },
         end(event: InteractEvent) {
-          console.log("end")
           if (endCallback) {
             endCallback(false);
           }
