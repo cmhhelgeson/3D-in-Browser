@@ -1,7 +1,7 @@
 import { VECTOR_3D, Triangle, VECTOR_UV, Mesh, SimpleMesh, Matrix4x4 } from "./types";
 
-import { Vector_Initialize } from "./Vector3DUtils";
 import { Vector_UV_Initialize } from "./VectorUVUtils";
+import { Vector_Initialize } from "./Vector3DUtils";
 import { 
 	Matrix4x4_Cross_Vector, 
 	Matrix4x4_MakeRotationX,
@@ -181,6 +181,7 @@ export const Mesh_Load_Model_Obj = (data: string) => {
 }
 
 
+//TODO: Make this actually work
 //Note function will not work without refactoring mesh creation code to consider vertices, indices, normals, etc
 export const Populate_Mesh_With_Sphere = (
 	radius: number,
@@ -238,6 +239,9 @@ export const Populate_Mesh_With_Sphere = (
 	for (let h = 0; h < horizontalLoops - 2; h++) {
 		for (let v = 0; v < verticalLoops - 1; v++) {
 			//TODO: These indices might be in wrong order
+			const lowerLeft = (h + 1) * verticalLoops + v;
+			const upperLeft = h * verticalLoops + v;
+			const upperRight = (h + 1) * verticalLoops
 			let indiceOne: number = calculateIndice(h + 1, v);
 			let indiceTwo: number = calculateIndice(h, v);
 			let indiceThree: number = calculateIndice(h, v + 1);
@@ -258,9 +262,7 @@ export const Populate_Mesh_With_Sphere = (
 
 }
 
-
-
-export const Populate_Mesh_With_Cube = (
+export const Populate_SimpleMesh_With_Cube = (
 	originX: number,
 	originY: number, 
 	originZ: number, 
@@ -357,98 +359,14 @@ export const Populate_Mesh_With_Cube = (
 	return newMesh;
 }
 
-/* export const DrawMesh = (
-	mesh: Mesh,
-	worldMatrix: Matrix4x4,
-	context: CanvasRenderingContext2D,
-) => {
-	mesh.faceVerts.forEach((face, idx) => {
-		const vi1 = face[0];
-		const vi2 = face[1];
-		const vi3 = face[2];
-		
-		let triTransformed: Triangle = {
-        	p: [
-         		Matrix4x4_Cross_Vector(worldMatrix, tri.p[0]),
-          		Matrix4x4_Cross_Vector(worldMatrix, tri.p[1]),
-          		Matrix4x4_Cross_Vector(worldMatrix, tri.p[2]),
-        	], 
-        	uvCoords: [Vector_U] 
-      	}
-
-
-      //Cross Product Calculations
-      let triVecOne: VECTOR_3D = Vector_Sub(triTransformed.p[1], triTransformed.p[0]);
-      let triVecTwo: VECTOR_3D = Vector_Sub(triTransformed.p[2], triTransformed.p[1]);
-
-
-      //The normal of the vector is the cross product of the two vectors that make up the triangle
-      //Or find using the determinant of the matrix produced when finding the area
-      let triNormal: VECTOR_3D = Vector_CrossProduct(triVecOne, triVecTwo);
-      //let triMiddle: VECTOR_3D = Triangle_Get_Centroid(triTransformed);
-      
-
-      triNormal = Vector_Normalise(triNormal);
-      colorIndex = (colorIndex + 1) % colors.length;
-
-      //Take the dot product of the triangleNormal and the camera eye vector
-      //If the normal is perpendicular to or forms an obtuse angle with the
-      //Camera eye vector, then the projection of the normal will be <=0
-      if (Vector_DotProduct(triNormal, triTransformed.p[0]) < 0.0) {
-
-        //Create Single Direction Light
-        let usedLight: VECTOR_3D = light.current
-        usedLight = Vector_Normalise(usedLight);
-
-        const lightToNormal: number = Vector_DotProduct(triNormal, usedLight);
-        //get r g b values from string
-        const initialColor = colors[colorIndex].match(/(\d+)/g);
-        let r = 255;
-        let g = 255;
-        let b = 255;
-
-        if (initialColor && initialColor.length >= 3) {
-          r = parseInt(initialColor[0]);
-          g = parseInt(initialColor[1]);
-          b = parseInt(initialColor[2])
-        }
-        r = lightToNormal * r;
-        g = lightToNormal * g;
-        b = lightToNormal * b;
-        
-        const color = `rgba(${r} ${g} ${b})`;
-
-        let triProjected: Triangle = {
-          p: [
-            Matrix4x4_Cross_Vector(projMat.current, triTransformed.p[0]),
-            Matrix4x4_Cross_Vector(projMat.current, triTransformed.p[1]),
-            Matrix4x4_Cross_Vector(projMat.current, triTransformed.p[2]),
-          ], 
-          uvCoords: triTransformed.uvCoords,
-        }
-
-        triProjected.p[0] = Vector_Div(triProjected.p[0], triProjected.p[0].w);
-        triProjected.p[1] = Vector_Div(triProjected.p[1], triProjected.p[1].w);
-        triProjected.p[2] = Vector_Div(triProjected.p[2], triProjected.p[2].w);
-
-        //Scale into screen view
-        triProjected.p[0].x += 1.0; triProjected.p[0].y += 1.0;
-			  triProjected.p[1].x += 1.0; triProjected.p[1].y += 1.0;
-			  triProjected.p[2].x += 1.0; triProjected.p[2].y += 1.0;
-			  triProjected.p[0].x *= 0.5 * canvasProps.current.width;
-			  triProjected.p[0].y *= 0.5 * canvasProps.current.height;
-			  triProjected.p[1].x *= 0.5 * canvasProps.current.width
-			  triProjected.p[1].y *= 0.5 * canvasProps.current.height;
-			  triProjected.p[2].x *= 0.5 * canvasProps.current.width;
-			  triProjected.p[2].y *= 0.5 * canvasProps.current.height; 
-
-        DrawTriangle(triProjected.p[0].x, triProjected.p[0].y,
-				  triProjected.p[1].x, triProjected.p[1].y,
-				  triProjected.p[2].x, triProjected.p[2].y,
-				  color, context);
-      }
-
-      
-    })
-
-} */
+export const Populate_Mesh_With_Null = () : Mesh => {
+	let mesh: Mesh = {
+		verts: [],
+		vertexNormals: [],
+		vertexUVs: [],
+		faceVerts: [],
+		faceNormals: [],
+		faceUVs: []
+	}
+	return mesh
+}

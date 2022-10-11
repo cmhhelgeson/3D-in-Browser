@@ -18,18 +18,21 @@ import {
   Matrix4x4_MakeTranslation
 } from './utils/Matrix4x4Utils';
 import { 
+  DrawMesh,
   DrawTriangle, 
 } from './utils/drawUtils';
 
-import { Populate_Mesh_With_Cube, SimpleMesh_Load_Model_OBJ } from './utils/MeshUtils';
+import { 
+  Populate_SimpleMesh_With_Cube, 
+  Populate_Mesh_With_Null, 
+  SimpleMesh_Load_Model_OBJ, 
+  Mesh_Load_Model_Obj
+} from './utils/MeshUtils';
 
-import {VECTOR_3D, Matrix4x4, Triangle, SimpleMesh} from "./utils/types"
-import * as Resources from "./resources"
+import {VECTOR_3D, Matrix4x4, Triangle, SimpleMesh, Mesh} from "./utils/types"
 import { GenericXPWindow } from './components/GenericXPWindow';
 import axios from 'axios';
 import { SliderDisplay } from './components/SliderDisplay';
-import { getHashes } from 'crypto';
-
 const colors = [
   //red, orange, yellow, green, blue, purple, cyan, teal, pink
   'rgb(255,0,0)',
@@ -75,9 +78,7 @@ const App = () => {
     pixelHeight: 1,
     ratio: 480/512
   })
-  const meshRef = useRef<SimpleMesh>(Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 5.0, 1.0, 5.0));
-  const [meshState, setMeshState] = useState(Populate_Mesh_With_Cube(0.0, 0.0, 0.0, 5.0, 1.0, 5.0));
-  const [sliderState, setSliderState] = useState([0.0, 0.0, 0.0]);
+  const cube = useRef<Mesh>(Populate_Mesh_With_Null())
   const light = useRef<VECTOR_3D>(Vector_Initialize(0.0, 0.0, -1.0));
   const [meshText, setMeshText] = useState<string>("");
   const fov = useRef<number>(90);
@@ -152,92 +153,8 @@ const App = () => {
     worldMatrix = Matrix4x4_Cross_Matrix4x4(matRotZ, matRotX);
     worldMatrix = Matrix4x4_Cross_Matrix4x4(worldMatrix, matTranslationZ)
 
-    
     let colorIndex = 0;
-    meshRef.current.tris.forEach((tri, idx) => {
-      let triTransformed = {
-        p: [
-          Matrix4x4_Cross_Vector(worldMatrix, tri.p[0]),
-          Matrix4x4_Cross_Vector(worldMatrix, tri.p[1]),
-          Matrix4x4_Cross_Vector(worldMatrix, tri.p[2]),
-        ], 
-        uvCoords: tri.uvCoords,
-      }
-
-
-      //Cross Product Calculations
-      let triVecOne: VECTOR_3D = Vector_Sub(triTransformed.p[1], triTransformed.p[0]);
-      let triVecTwo: VECTOR_3D = Vector_Sub(triTransformed.p[2], triTransformed.p[1]);
-
-
-      //The normal of the vector is the cross product of the two vectors that make up the triangle
-      //Or find using the determinant of the matrix produced when finding the area
-      let triNormal: VECTOR_3D = Vector_CrossProduct(triVecOne, triVecTwo);
-      //let triMiddle: VECTOR_3D = Triangle_Get_Centroid(triTransformed);
-      
-
-      triNormal = Vector_Normalise(triNormal);
-      colorIndex = (colorIndex + 1) % colors.length;
-
-      //Take the dot product of the triangleNormal and the camera eye vector
-      //If the normal is perpendicular to or forms an obtuse angle with the
-      //Camera eye vector, then the projection of the normal will be <=0
-      if (Vector_DotProduct(triNormal, triTransformed.p[0]) < 0.0) {
-
-        //Create Single Direction Light
-        let usedLight: VECTOR_3D = light.current
-        usedLight = Vector_Normalise(usedLight);
-
-        const lightToNormal: number = Vector_DotProduct(triNormal, usedLight);
-        //get r g b values from string
-        const initialColor = colors[colorIndex].match(/(\d+)/g);
-        let r = 255;
-        let g = 255;
-        let b = 255;
-
-        if (initialColor && initialColor.length >= 3) {
-          r = parseInt(initialColor[0]);
-          g = parseInt(initialColor[1]);
-          b = parseInt(initialColor[2])
-        }
-        r = lightToNormal * r;
-        g = lightToNormal * g;
-        b = lightToNormal * b;
-        
-        const color = `rgba(${r} ${g} ${b})`;
-
-        let triProjected: Triangle = {
-          p: [
-            Matrix4x4_Cross_Vector(projMat.current, triTransformed.p[0]),
-            Matrix4x4_Cross_Vector(projMat.current, triTransformed.p[1]),
-            Matrix4x4_Cross_Vector(projMat.current, triTransformed.p[2]),
-          ], 
-          uvCoords: triTransformed.uvCoords,
-        }
-
-        triProjected.p[0] = Vector_Div(triProjected.p[0], triProjected.p[0].w);
-        triProjected.p[1] = Vector_Div(triProjected.p[1], triProjected.p[1].w);
-        triProjected.p[2] = Vector_Div(triProjected.p[2], triProjected.p[2].w);
-
-        //Scale into screen view
-        triProjected.p[0].x += 1.0; triProjected.p[0].y += 1.0;
-			  triProjected.p[1].x += 1.0; triProjected.p[1].y += 1.0;
-			  triProjected.p[2].x += 1.0; triProjected.p[2].y += 1.0;
-			  triProjected.p[0].x *= 0.5 * canvasProps.current.width;
-			  triProjected.p[0].y *= 0.5 * canvasProps.current.height;
-			  triProjected.p[1].x *= 0.5 * canvasProps.current.width
-			  triProjected.p[1].y *= 0.5 * canvasProps.current.height;
-			  triProjected.p[2].x *= 0.5 * canvasProps.current.width;
-			  triProjected.p[2].y *= 0.5 * canvasProps.current.height; 
-
-        DrawTriangle(triProjected.p[0].x, triProjected.p[0].y,
-				  triProjected.p[1].x, triProjected.p[1].y,
-				  triProjected.p[2].x, triProjected.p[2].y,
-				  color, context);
-      }
-
-      
-    })
+    DrawMesh(cube.current, worldMatrix, projMat.current, canvas, context, light.current)
     requestAnimationFrame(() => draw());  
   }
 
@@ -276,7 +193,6 @@ const App = () => {
 
   //@componentDidMount()
   useEffect(() => {
-
     const getMeshData = async () => {
       const s = await axios.get("/models/cube.obj")
       const data: string = await s.data;
@@ -288,9 +204,8 @@ const App = () => {
   }, [])
 
   useEffect(() => {
-    const mesh = SimpleMesh_Load_Model_OBJ(meshText);
-    meshRef.current = mesh
-
+    let mesh = Mesh_Load_Model_Obj(meshText)
+    cube.current = mesh;
   }, [meshText])
 
 
