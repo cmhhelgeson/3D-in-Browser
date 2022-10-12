@@ -64,6 +64,10 @@ type GameState = {
   projMat: Matrix4x4
 }
 
+const sliderText = [
+  "Press Left and Right to change the FOV!"
+]
+
 
 
 const App = () => {
@@ -215,7 +219,11 @@ const App = () => {
         height={canvasProps.current.height * canvasProps.current.ratio}
         ref={canvasRef}></canvas>
       </GenericXPWindow>
-      <SliderDisplay sliders={sliders} text="Gabagool"/>
+      <SliderDisplay 
+        sliders={sliders} 
+        windowText="Sliders"
+        additionalText={sliderText}
+      />
       
     </div>
   );

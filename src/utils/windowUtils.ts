@@ -14,22 +14,30 @@ export const dragRefWith = (
     interact(draggedWith.current).draggable({
       maxPerElement: 10,
         listeners: {
-          start(event) {
-
+          start(event: InteractEvent) {
+            if (draggedRef.current) {
+              draggedRef.current.style.zIndex = "1";
+            }
           },
           move(event: InteractEvent) {
             if (draggedRef.current) {
+              //Parse new position
               const leftInt = parseInt(draggedRef.current.style.left.slice(0, -2))
               const topInt = parseInt(draggedRef.current.style.top.slice(0, -2))
               draggedRef.current.style.left = leftInt + event.dx + 'px';
               draggedRef.current.style.top = topInt + event.dy + 'px';
             }
           },
-          
+          end(event) {
+            if (draggedRef.current) {
+              draggedRef.current.style.zIndex = "0";
+            }
+          }
+
         }, 
         modifiers: [
             interact.modifiers.restrictRect({
-                restriction: {top: 0, left: 0, right: 1000, bottom: 900}
+                restriction: {top: 0, left: 0, right: 1000, bottom: window.innerHeight / 2}
             })
         ]
     })

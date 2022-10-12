@@ -38,11 +38,12 @@ const Slider = ({label, lowVal, highVal, setState, valueToChange, lowValLabel, h
 
 export type SliderDisplayParams = {
     sliders: SliderParams[], 
-    text: string
+    windowText: string,
+    additionalText?: string[]
 }
-export const SliderDisplay = ({sliders, text}: SliderDisplayParams) => {
+export const SliderDisplay = ({sliders, windowText, additionalText}: SliderDisplayParams) => {
     return (<GenericXPWindow width={300} height={300}
-        text={text} offsetX={2000} offsetY={20}>
+        text={windowText} offsetX={1000} offsetY={20}>
         <div className="slider_block" style={{"display": "flex", "flexDirection": "column", "alignItems": "center"}}>
             {sliders.map((slider) => (
                 <Slider
@@ -51,6 +52,12 @@ export const SliderDisplay = ({sliders, text}: SliderDisplayParams) => {
                     label={slider.label}
                 />
             ))}
+            {additionalText ? 
+                additionalText.map((textBlock) => (
+                    <p>{additionalText}</p>
+                )) 
+                : null
+            }
         </div>
     </GenericXPWindow>);
 }
