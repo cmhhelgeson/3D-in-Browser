@@ -45,6 +45,52 @@ export const DrawTriangle = (
   context.fill();
   //context.stroke();
 }
+
+
+type XY = {
+  x: number,
+  y: number
+}
+
+const yCompare = (a: XY, b: XY) => {
+  return a.y - b.y;
+}
+
+const xCompare = (a: XY, b: XY) => {
+  return a.x - b.x;
+}
+
+
+export const DrawTrianglePixelByPixel = (
+  p1: XY,
+  p2: XY,
+  p3: XY
+) => {
+  [p1, p2, p3] = [p1, p2, p3].sort(yCompare)
+  /* if (p2.y < p1.y) {
+    [p1, p2] = [p2, p1];
+  }
+
+  if (p3.y < p1.y) {
+    [p1, p3] = [p3, p1];
+  }
+
+  if (p3.y < p2.y) {
+    [p2, p3] = [p3, p2];
+  } */
+
+  const deltaYTop = yCompare(p2, p1);
+  const deltaXTop = xCompare(p2, p1);
+
+  const deltaYBottom = yCompare(p3, p1);
+  const delatXBottom = xCompare(p3, p1);
+
+
+
+
+
+  
+}
   
 export const DrawLine = (
   x0: number, 
@@ -104,6 +150,11 @@ export const DrawMesh = (
       uvCoords: [dummyUV, dummyUV, dummyUV] 
     }
 
+    //TODO: Use face normals for goraud shading
+    //const fni1 = mesh.faceNormals[idx][0];
+    //const fni2 = mesh.faceNormals[idx][1];
+    //const fni3 = mesh.faceNormals[idx][2];
+    
     //Cross Product Calculations
     let triVecOne: VECTOR_3D = Vector_Sub(triTransformed.p[1], triTransformed.p[0]);
     let triVecTwo: VECTOR_3D = Vector_Sub(triTransformed.p[2], triTransformed.p[1]);
@@ -114,6 +165,7 @@ export const DrawMesh = (
     let triNormal: VECTOR_3D = Vector_CrossProduct(triVecOne, triVecTwo);
     //let triMiddle: VECTOR_3D = Triangle_Get_Centroid(triTransformed);
     
+    //Ned to nromalize the triangle to get a 
     triNormal = Vector_Normalise(triNormal);
     colorIndex = (colorIndex + 1) % colors.length;
 

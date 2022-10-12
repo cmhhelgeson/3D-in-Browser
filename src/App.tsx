@@ -22,10 +22,8 @@ import {
   DrawTriangle, 
 } from './utils/drawUtils';
 
-import { 
-  Populate_SimpleMesh_With_Cube, 
+import {
   Populate_Mesh_With_Null, 
-  SimpleMesh_Load_Model_OBJ, 
   Mesh_Load_Model_Obj
 } from './utils/MeshUtils';
 
@@ -78,7 +76,7 @@ const App = () => {
     pixelHeight: 1,
     ratio: 480/512
   })
-  const cube = useRef<Mesh>(Populate_Mesh_With_Null())
+  const cube = useRef<Mesh>(Populate_Mesh_With_Null());
   const light = useRef<VECTOR_3D>(Vector_Initialize(0.0, 0.0, -1.0));
   const [meshText, setMeshText] = useState<string>("");
   const fov = useRef<number>(90);
