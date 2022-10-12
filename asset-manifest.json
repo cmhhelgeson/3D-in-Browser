@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/3D-in-Browser/static/css/main.b1c469bb.css",
-    "main.js": "/3D-in-Browser/static/js/main.882cdb9b.js",
+    "main.js": "/3D-in-Browser/static/js/main.d19849e1.js",
     "static/js/787.b87b82be.chunk.js": "/3D-in-Browser/static/js/787.b87b82be.chunk.js",
     "static/media/PerfectDOSVGA437Win.woff": "/3D-in-Browser/static/media/PerfectDOSVGA437Win.86368cc9dec15d71c965.woff",
     "static/media/PerfectDOSVGA437Win.woff2": "/3D-in-Browser/static/media/PerfectDOSVGA437Win.7dc718899b215fa16aa7.woff2",
@@ -11,11 +11,11 @@
     "static/media/ms_sans_serif_bold.woff2": "/3D-in-Browser/static/media/ms_sans_serif_bold.7fcf57cc6e87ecddbf64.woff2",
     "index.html": "/3D-in-Browser/index.html",
     "main.b1c469bb.css.map": "/3D-in-Browser/static/css/main.b1c469bb.css.map",
-    "main.882cdb9b.js.map": "/3D-in-Browser/static/js/main.882cdb9b.js.map",
+    "main.d19849e1.js.map": "/3D-in-Browser/static/js/main.d19849e1.js.map",
     "787.b87b82be.chunk.js.map": "/3D-in-Browser/static/js/787.b87b82be.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.b1c469bb.css",
-    "static/js/main.882cdb9b.js"
+    "static/js/main.d19849e1.js"
   ]
 }
