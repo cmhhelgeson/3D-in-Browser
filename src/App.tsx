@@ -20,11 +20,13 @@ import {
 import { 
   DrawMesh,
   DrawTriangle, 
+  DrawSimpleMesh
 } from './utils/drawUtils';
 
 import {
   Populate_Mesh_With_Null, 
-  Mesh_Load_Model_Obj
+  Mesh_Load_Model_Obj,
+  Populate_SimpleMesh_With_Cube
 } from './utils/MeshUtils';
 
 import {VECTOR_3D, Matrix4x4, Triangle, SimpleMesh, Mesh} from "./utils/types"
@@ -81,6 +83,7 @@ const App = () => {
     ratio: 480/512
   })
   const cube = useRef<Mesh>(Populate_Mesh_With_Null());
+  const simpleCube = useRef<SimpleMesh>(Populate_SimpleMesh_With_Cube(0.0, 0.0, 0.0, 1.0, 1.0, 1.o))
   const light = useRef<VECTOR_3D>(Vector_Initialize(0.0, 0.0, -1.0));
   const [meshText, setMeshText] = useState<string>("");
   const fov = useRef<number>(90);
@@ -149,7 +152,7 @@ const App = () => {
     //Create World Matrix
     const matRotZ: Matrix4x4 = Matrix4x4_MakeRotationZ(fTheta.current);
     const matRotX: Matrix4x4 = Matrix4x4_MakeRotationX(fTheta.current);
-    const matTranslationZ = Matrix4x4_MakeTranslation(0, 0, 10);
+    const matTranslationZ = Matrix4x4_MakeTranslation(0, 0, 3);
     let worldMatrix: Matrix4x4 = Matrix4x4_MakeIdentity();
     
     worldMatrix = Matrix4x4_Cross_Matrix4x4(matRotZ, matRotX);
@@ -157,6 +160,7 @@ const App = () => {
 
     let colorIndex = 0;
     DrawMesh(cube.current, worldMatrix, projMat.current, canvas, context, light.current)
+    DrawSimpleMesh(simpleCube.current, worldMatrix, projMat.current, canvas, context, light.current);
     requestAnimationFrame(() => draw());  
   }
 
