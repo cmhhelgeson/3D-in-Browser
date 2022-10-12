@@ -1,21 +1,21 @@
 {
   "files": {
-    "main.css": "/software3D/static/css/main.b61f4306.css",
-    "main.js": "/software3D/static/js/main.140482d6.js",
-    "static/js/787.b87b82be.chunk.js": "/software3D/static/js/787.b87b82be.chunk.js",
-    "static/media/PerfectDOSVGA437Win.woff": "/software3D/static/media/PerfectDOSVGA437Win.86368cc9dec15d71c965.woff",
-    "static/media/PerfectDOSVGA437Win.woff2": "/software3D/static/media/PerfectDOSVGA437Win.7dc718899b215fa16aa7.woff2",
-    "static/media/ms_sans_serif.woff": "/software3D/static/media/ms_sans_serif.aac84aa6de42b83d1a62.woff",
-    "static/media/ms_sans_serif_bold.woff": "/software3D/static/media/ms_sans_serif_bold.9fbe71248995f1c639d4.woff",
-    "static/media/ms_sans_serif.woff2": "/software3D/static/media/ms_sans_serif.0348082abb503fb6a8c2.woff2",
-    "static/media/ms_sans_serif_bold.woff2": "/software3D/static/media/ms_sans_serif_bold.7fcf57cc6e87ecddbf64.woff2",
-    "index.html": "/software3D/index.html",
-    "main.b61f4306.css.map": "/software3D/static/css/main.b61f4306.css.map",
-    "main.140482d6.js.map": "/software3D/static/js/main.140482d6.js.map",
-    "787.b87b82be.chunk.js.map": "/software3D/static/js/787.b87b82be.chunk.js.map"
+    "main.css": "/3D-in-Browser/static/css/main.b1c469bb.css",
+    "main.js": "/3D-in-Browser/static/js/main.882cdb9b.js",
+    "static/js/787.b87b82be.chunk.js": "/3D-in-Browser/static/js/787.b87b82be.chunk.js",
+    "static/media/PerfectDOSVGA437Win.woff": "/3D-in-Browser/static/media/PerfectDOSVGA437Win.86368cc9dec15d71c965.woff",
+    "static/media/PerfectDOSVGA437Win.woff2": "/3D-in-Browser/static/media/PerfectDOSVGA437Win.7dc718899b215fa16aa7.woff2",
+    "static/media/ms_sans_serif.woff": "/3D-in-Browser/static/media/ms_sans_serif.aac84aa6de42b83d1a62.woff",
+    "static/media/ms_sans_serif_bold.woff": "/3D-in-Browser/static/media/ms_sans_serif_bold.9fbe71248995f1c639d4.woff",
+    "static/media/ms_sans_serif.woff2": "/3D-in-Browser/static/media/ms_sans_serif.0348082abb503fb6a8c2.woff2",
+    "static/media/ms_sans_serif_bold.woff2": "/3D-in-Browser/static/media/ms_sans_serif_bold.7fcf57cc6e87ecddbf64.woff2",
+    "index.html": "/3D-in-Browser/index.html",
+    "main.b1c469bb.css.map": "/3D-in-Browser/static/css/main.b1c469bb.css.map",
+    "main.882cdb9b.js.map": "/3D-in-Browser/static/js/main.882cdb9b.js.map",
+    "787.b87b82be.chunk.js.map": "/3D-in-Browser/static/js/787.b87b82be.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.b61f4306.css",
-    "static/js/main.140482d6.js"
+    "static/css/main.b1c469bb.css",
+    "static/js/main.882cdb9b.js"
   ]
 }
