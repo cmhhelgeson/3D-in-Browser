@@ -43,7 +43,7 @@ export type SliderDisplayParams = {
 }
 export const SliderDisplay = ({sliders, windowText, additionalText}: SliderDisplayParams) => {
     return (<GenericXPWindow width={300} height={300}
-        text={windowText} offsetX={1000} offsetY={20}>
+        text={windowText} offsetX={700} offsetY={20}>
         <div className="slider_block" style={{"display": "flex", "flexDirection": "column", "alignItems": "center"}}>
             {sliders.map((slider) => (
                 <Slider
