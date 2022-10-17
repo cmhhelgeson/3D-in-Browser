@@ -83,7 +83,7 @@ const App = () => {
     ratio: 480/512
   })
   const cube = useRef<Mesh>(Populate_Mesh_With_Null());
-  const simpleCube = useRef<SimpleMesh>(Populate_SimpleMesh_With_Cube(0.0, 0.0, 0.0, 1.0, 1.0, 1.o))
+  const simpleCube = useRef<SimpleMesh>(Populate_SimpleMesh_With_Cube(0.0, 0.0, 0.0, 1.0, 1.0, 1.0))
   const light = useRef<VECTOR_3D>(Vector_Initialize(0.0, 0.0, -1.0));
   const [meshText, setMeshText] = useState<string>("");
   const fov = useRef<number>(90);
